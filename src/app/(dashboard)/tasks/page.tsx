@@ -3,7 +3,7 @@ import { useEffect, useMemo, useState } from "react";
 import PageHeader from "@/components/ui/PageHeader";
 import DataTable from "@/components/ui/DataTable";
 import StatusBadge from "@/components/ui/StatusBadge";
-import { Plus } from "lucide-react";
+import { Plus, Pencil } from "lucide-react";
 import { Column, Task } from "@/types";
 import { createClient } from "@/lib/supabase/client";
 import Link from "next/link";
@@ -16,6 +16,7 @@ export default function TasksPage() {
   const [newTaskOpen, setNewTaskOpen] = useState(false);
   const [creatingTask, setCreatingTask] = useState(false);
   const [currentUserId, setCurrentUserId] = useState<string | null>(null);
+  const [editingTaskId, setEditingTaskId] = useState<string | null>(null);
 
 const [newTask, setNewTask] = useState({
   name: "",
@@ -115,6 +116,7 @@ useEffect(() => {
 }, [supabase]);
 
 const handleCreateTask = async () => {
+  const isEditMode = Boolean(editingTaskId);
   if (!newTask.name.trim()) {
     alert("Task name is required.");
     return;
@@ -139,20 +141,29 @@ const handleCreateTask = async () => {
     return;
   }
 
-  const { data, error } = await supabase
-    .from("tasks")
-    .insert({
-      user_id: user.id,
-      project_id: newTask.project_id,
-      name: newTask.name.trim(),
-      status: newTask.status,
-      start_date: newTask.start_date || null,
-      due_date: newTask.due_date || null,
-      assigned_to: newTask.assigned_to || null,
-      priority: newTask.priority,
-    })
-    .select("*")
-    .single();
+ const taskData = {
+  user_id: user.id,
+  project_id: newTask.project_id,
+  name: newTask.name.trim(),
+  status: newTask.status,
+  start_date: newTask.start_date || null,
+  due_date: newTask.due_date || null,
+  assigned_to: newTask.assigned_to || null,
+  priority: newTask.priority,
+};
+
+const { data, error } = isEditMode
+  ? await supabase
+      .from("tasks")
+      .update(taskData)
+      .eq("id", editingTaskId!)
+      .select("*")
+      .single()
+  : await supabase
+      .from("tasks")
+      .insert(taskData)
+      .select("*")
+      .single();
 
   if (error) {
     console.error("Error creating task:", error);
@@ -178,7 +189,13 @@ const handleCreateTask = async () => {
     priority: (data.priority ?? "Medium") as Task["priority"],
   };
 
-  setTasks((current) => [createdTask, ...current]);
+  setTasks((current) =>
+  isEditMode
+    ? current.map((task) =>
+        String(task.id) === editingTaskId ? createdTask : task
+      )
+    : [createdTask, ...current]
+  );
 
   await updateProjectProgressFromTasks(newTask.project_id);
 
@@ -193,6 +210,7 @@ const handleCreateTask = async () => {
   });
 
   setNewTaskOpen(false);
+  setEditingTaskId(null);
   setCreatingTask(false);
 };
 
@@ -338,6 +356,34 @@ const updateProjectProgressFromTasks = async (projectId: string) => {
       "Unassigned",
   },
     { key: "priority", header: "Priority", render: (r) => <StatusBadge label={r.priority} /> },
+    {
+  key: "actions",
+  header: "Actions",
+  render: (task) => (
+    <button
+      type="button"
+      onClick={() => {
+        setEditingTaskId(String(task.id));
+
+        setNewTask({
+          name: task.name,
+          project_id: task.project,
+          status: task.status,
+          start_date: task.startDate,
+          due_date: task.dueDate,
+          assigned_to: task.assignedToId ?? "",
+          priority: task.priority,
+        });
+
+        setNewTaskOpen(true);
+      }}
+      className="inline-flex items-center gap-1.5 rounded-md border border-gray-200 bg-white px-2.5 py-1.5 text-xs font-medium text-gray-700 transition hover:bg-gray-50"
+    >
+      <Pencil size={13} />
+      Edit
+    </button>
+  ),
+},
   ];
 
     return (
@@ -373,12 +419,14 @@ const updateProjectProgressFromTasks = async (projectId: string) => {
             {/* Header */}
             <div className="flex items-center justify-between border-b border-gray-100 px-5 py-4">
               <div>
-                <h2 className="text-lg font-bold text-gray-900">
-                  New Task
+                <h2 className="...">
+                  {editingTaskId ? "Edit Task" : "New Task"}
                 </h2>
 
                 <p className="mt-0.5 text-xs text-gray-500">
-                  Create a new task for your project.
+                  {editingTaskId
+                    ? "Update the task information."
+                    : "Create a new task for your project."}
                 </p>
               </div>
 
@@ -575,7 +623,13 @@ const updateProjectProgressFromTasks = async (projectId: string) => {
     disabled={creatingTask}
     className="rounded-lg bg-brand px-5 py-2 text-sm font-semibold text-white transition hover:opacity-90 disabled:cursor-not-allowed disabled:opacity-60"
   >
-    {creatingTask ? "Creating..." : "Create Task"}
+      {creatingTask
+    ? editingTaskId
+      ? "Saving..."
+      : "Creating..."
+    : editingTaskId
+      ? "Save"
+      : "Create Task"}
   </button>
 </div>
   </div>

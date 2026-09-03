@@ -14,7 +14,7 @@ export interface Column<T> {
 }
 
 export interface Customer {
-  id: number; company: string; contact: string; email: string; phone: string;
+  id: string | number; company: string; contact: string; email: string; phone: string;
   active: boolean; group: string; dateCreated: string;
 }
 
