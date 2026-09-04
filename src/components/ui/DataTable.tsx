@@ -1,5 +1,5 @@
 "use client";
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { Column } from "@/types";
 import SearchInput from "./SearchInput";
 import FilterButton from "./FilterButton";
@@ -11,6 +11,7 @@ import {
   Columns3,
   Download,
   RefreshCw,
+  Filter,
 } from "lucide-react";
 type ID = number | string;
 
@@ -23,6 +24,10 @@ export default function DataTable<T extends { id: ID }>({
   newButton,
   extraToolbar,
   onRefresh,
+  onBulkAction,
+  filterContent,
+  activeFilterCount,
+  columnVisibilityKey,
 }: {
   columns: Column<T>[];
   rows: T[];
@@ -32,9 +37,17 @@ export default function DataTable<T extends { id: ID }>({
   newButton?: React.ReactNode;
   extraToolbar?: React.ReactNode;
   onRefresh?: () => void | Promise<void>;
+  onBulkAction?: (
+    action: "active" | "inactive" | "delete",
+    selectedIds: ID[]
+  ) => void | Promise<void>;
+  filterContent?: React.ReactNode;
+  activeFilterCount?: number;
+  columnVisibilityKey?: string;
 }) {
   const [query, setQuery] = useState("");
   const [pageSize, setPageSize] = useState(25);
+  const [currentPage, setCurrentPage] = useState(1);
   const [selected, setSelected] = useState<Set<ID>>(new Set());
   const [sortConfig, setSortConfig] = useState<{
   key: string;
@@ -42,8 +55,42 @@ export default function DataTable<T extends { id: ID }>({
   } | null>(null);
 
   const [hiddenColumns, setHiddenColumns] = useState<Set<string>>(new Set());
+
+  const [columnVisibilityReady, setColumnVisibilityReady] = useState(false);
+  useEffect(() => {
+  if (!columnVisibilityKey) {
+    setColumnVisibilityReady(true);
+    return;
+  }
+
+  const savedColumns = localStorage.getItem(columnVisibilityKey);
+
+  if (savedColumns) {
+    const parsed = JSON.parse(savedColumns);
+
+    if (Array.isArray(parsed)) {
+      setHiddenColumns(new Set(parsed));
+    }
+  }
+
+  setColumnVisibilityReady(true);
+}, [columnVisibilityKey]);
+
+useEffect(() => {
+  if (!columnVisibilityReady || !columnVisibilityKey) return;
+
+  localStorage.setItem(
+    columnVisibilityKey,
+    JSON.stringify(Array.from(hiddenColumns))
+  );
+}, [hiddenColumns, columnVisibilityKey, columnVisibilityReady]);
+
   const [openColumnMenu, setOpenColumnMenu] = useState<string | null>(null);
   const [columnsMenuOpen, setColumnsMenuOpen] = useState(false);
+  const [bulkMenuOpen, setBulkMenuOpen] = useState(false);
+  const [filterMenuOpen, setFilterMenuOpen] = useState(false);
+
+  
 
 const visibleColumns = useMemo(
   () => columns.filter((column) => !hiddenColumns.has(column.key)),
@@ -94,7 +141,27 @@ const toggleColumnVisibility = (key: string) => {
   });
 }, [filtered, sortConfig]);
 
-  const visible = sorted.slice(0, pageSize);
+  const totalPages = Math.max(1, Math.ceil(sorted.length / pageSize));
+
+const startIndex = (currentPage - 1) * pageSize;
+const endIndex = startIndex + pageSize;
+
+const visible = sorted.slice(startIndex, endIndex);
+
+useEffect(() => {
+  if (currentPage > totalPages) {
+    setCurrentPage(totalPages);
+  }
+}, [currentPage, totalPages]);
+useEffect(() => {
+  setCurrentPage(1);
+}, [rows]);
+
+useEffect(() => {
+  setCurrentPage(1);
+}, [query]);
+
+
   const allSelected = selectable && visible.length > 0 && visible.every((r) => selected.has(r.id));
 
   const toggleAll = () => {
@@ -186,21 +253,67 @@ const toggleColumnVisibility = (key: string) => {
     URL.revokeObjectURL(url);
   };
 
+  const runBulkAction = async (
+  action: "active" | "inactive" | "delete"
+) => {
+  if (!onBulkAction || selected.size === 0) return;
+
+  await onBulkAction(action, Array.from(selected));
+
+  setSelected(new Set());
+  setBulkMenuOpen(false);
+};
+
   return (
-    <div className="overflow-hidden rounded-xl border border-gray-200 bg-white shadow-[0_10px_30px_rgba(15,23,42,0.08),0_2px_8px_rgba(15,23,42,0.05)] transition-shadow duration-300 hover:shadow-[0_16px_40px_rgba(15,23,42,0.12),0_4px_12px_rgba(15,23,42,0.07)]">
+    <div className="overflow-visible rounded-xl border border-gray-200 bg-white shadow-[0_10px_30px_rgba(15,23,42,0.08),0_2px_8px_rgba(15,23,42,0.05)] transition-shadow duration-300 hover:shadow-[0_16px_40px_rgba(15,23,42,0.12),0_4px_12px_rgba(15,23,42,0.07)]">
       <div className="flex flex-wrap items-center justify-between gap-2 border-b border-border-subtle px-4 py-2.5">
         <div className="flex items-center gap-2">
-          <select value={pageSize} onChange={(e) => setPageSize(Number(e.target.value))} className="rounded-md border border-border-subtle bg-white px-2 py-1.5 text-[13px] outline-none">
+          <select value={pageSize} onChange={(e) => { setPageSize(Number(e.target.value)); setCurrentPage(1); }} className="rounded-md border border-border-subtle bg-white px-2 py-1.5 text-[13px] outline-none">
             {[10, 25, 50, 100].map((n) => <option key={n} value={n}>{n}</option>)}
           </select>
           <button onClick={handleExport} className="flex items-center gap-1.5 rounded-md border border-border-subtle bg-white px-3 py-1.5 text-[13px] font-medium text-gray-700 hover:bg-gray-50">
             <Download size={14} /> Export
           </button>
           {bulkActions && (
-            <button disabled={selected.size === 0} className="rounded-md border border-border-subtle bg-white px-3 py-1.5 text-[13px] font-medium text-gray-700 hover:bg-gray-50 disabled:opacity-40">
-              Bulk Actions{selected.size > 0 ? ` (${selected.size})` : ""}
-            </button>
-          )}
+            <div className="relative">
+                <button
+                  type="button"
+                  disabled={selected.size === 0}
+                  onClick={() => setBulkMenuOpen((current) => !current)}
+                  className="rounded-md border border-border-subtle bg-white px-3 py-1.5 text-[13px] font-medium text-gray-700 transition hover:bg-gray-50 disabled:cursor-not-allowed disabled:opacity-40"
+                >
+                  Bulk Actions
+                  {selected.size > 0 ? ` (${selected.size})` : ""}
+                </button>
+
+                {bulkMenuOpen && selected.size > 0 && (
+                  <div className="absolute left-0 top-full z-50 mt-2 w-44 overflow-hidden rounded-xl border border-gray-200 bg-white p-1.5 shadow-[0_14px_40px_rgba(15,23,42,0.18)]">
+                    <button
+                      type="button" onClick={() => runBulkAction("active")}
+                      className="flex w-full items-center rounded-lg px-3 py-2 text-left text-xs font-medium text-gray-700 transition hover:bg-gray-50"
+                    >
+                      Set Active
+                    </button>
+
+                    <button
+                      type="button" onClick={() => runBulkAction("inactive")}
+                      className="flex w-full items-center rounded-lg px-3 py-2 text-left text-xs font-medium text-gray-700 transition hover:bg-gray-50"
+                    >
+                      Set Inactive
+                    </button>
+
+                    <div className="my-1 border-t border-gray-100" />
+
+                    <button
+                      type="button" onClick={() => runBulkAction("delete")}
+                      className="flex w-full items-center rounded-lg px-3 py-2 text-left text-xs font-medium text-red-600 transition hover:bg-red-50"
+                    >
+                      Delete Selected
+                    </button>
+                  </div>
+                )}
+              </div>
+            )}
           <button
             type="button"
             onClick={() => onRefresh?.()}
@@ -252,10 +365,51 @@ const toggleColumnVisibility = (key: string) => {
                     </label>
                   );
                 })}
+                <div className="my-2 border-t border-gray-100" />
+                <button
+                  type="button"
+                  onClick={() => {
+                    setHiddenColumns(new Set());
+                    setColumnsMenuOpen(false);
+                  }}
+                  className="flex w-full items-center justify-center rounded-lg bg-gray-50 px-3 py-2 text-xs font-semibold text-gray-700 transition hover:bg-gray-100"
+                >
+                  Show All Columns
+                </button>
+            </div>
+            
+          )}
+        </div>
+          <div className="relative">
+          <button
+          type="button"
+          onClick={() => setFilterMenuOpen((current) => !current)}
+          className={`flex items-center gap-1.5 rounded-md border px-3 py-1.5 text-[13px] font-medium transition ${
+          (activeFilterCount ?? 0) > 0
+            ? "border-brand bg-brand/10 text-brand shadow-sm"
+            : "border-border-subtle bg-white text-gray-700 hover:bg-gray-50"
+            }`}
+        >
+          <Filter size={14} />
+          Filters
+
+          {(activeFilterCount ?? 0) > 0 && (
+            <span className="ml-0.5 flex h-5 min-w-5 items-center justify-center rounded-full bg-brand px-1.5 text-[10px] font-bold text-white">
+              {activeFilterCount}
+            </span>
+          )}
+        </button>
+
+          {filterMenuOpen && (
+            <div className="absolute right-0 top-full z-50 mt-2 w-72 rounded-xl border border-gray-200 bg-white p-4 shadow-[0_14px_40px_rgba(15,23,42,0.18)]">
+              {filterContent ?? (
+                <p className="text-xs text-gray-400">
+                  No filters available.
+                </p>
+              )}
             </div>
           )}
         </div>
-          <FilterButton />
         </div>
       </div>
 
@@ -382,8 +536,43 @@ const toggleColumnVisibility = (key: string) => {
           </table>
         </div>
       )}
-      <div className="flex items-center justify-between px-4 py-2.5 text-xs text-gray-500">
-        <span>Showing {visible.length} of {filtered.length}</span>
+      <div className="flex items-center justify-between gap-3 px-4 py-2.5 text-xs text-gray-500">
+        <span>
+          Showing{" "}
+          {sorted.length === 0 ? 0 : startIndex + 1}
+          {" - "}
+          {Math.min(endIndex, sorted.length)}
+          {" of "}
+          {sorted.length}
+        </span>
+
+        <div className="flex items-center gap-2">
+          <button
+            type="button"
+            onClick={() =>
+              setCurrentPage((page) => Math.max(1, page - 1))
+            }
+            disabled={currentPage === 1}
+            className="rounded-md border border-gray-200 bg-white px-3 py-1.5 font-medium text-gray-700 transition hover:bg-gray-50 disabled:cursor-not-allowed disabled:opacity-40"
+          >
+            Previous
+          </button>
+
+          <span className="min-w-[90px] text-center font-medium text-gray-600">
+            Page {currentPage} of {totalPages}
+          </span>
+
+          <button
+            type="button"
+            onClick={() =>
+              setCurrentPage((page) => Math.min(totalPages, page + 1))
+            }
+            disabled={currentPage >= totalPages}
+            className="rounded-md border border-gray-200 bg-white px-3 py-1.5 font-medium text-gray-700 transition hover:bg-gray-50 disabled:cursor-not-allowed disabled:opacity-40"
+          >
+            Next
+          </button>
+        </div>
       </div>
     </div>
   );

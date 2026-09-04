@@ -205,7 +205,7 @@ export default function EditProfilePage() {
   }
 
  return (
-  <div className="profile-page-enter min-h-[calc(100vh-60px)] bg-[rgba(247,248,252,1)] px-5 py-6 md:px-8">
+  <div className="profile-edit-theme-page profile-page-enter min-h-[calc(100vh-60px)] bg-[rgba(247,248,252,1)] px-5 py-6 md:px-8">
     <div className="mx-auto max-w-5xl">
 
       {/* Compact Title */}
@@ -218,14 +218,7 @@ export default function EditProfilePage() {
       {/* Success Toast */}
       {message && (
         <div
-          className="
-            profile-toast fixed right-6 top-20 z-50
-            min-w-[330px] overflow-hidden rounded-[18px]
-            border border-[rgba(255,255,255,0.85)]
-            bg-[rgba(255,255,255,0.94)]
-            shadow-[0_22px_55px_rgba(57,45,100,0.18)]
-            backdrop-blur-xl
-          "
+          className="toast-card-motion fixed bottom-6 right-6 z-[100] w-[320px] overflow-hidden rounded-2xl border border-gray-200 bg-white shadow-[0_18px_45px_rgba(15,23,42,0.16)]"
         >
           <div className="flex items-center gap-3 px-4 py-3.5">
             <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-[14px] bg-[rgba(76,201,140,0.12)]">
@@ -254,9 +247,7 @@ export default function EditProfilePage() {
             </button>
           </div>
 
-          <div className="h-[3px] bg-[rgba(76,201,140,0.08)]">
-            <div className="profile-toast-progress h-full bg-[rgba(48,183,113,0.88)]" />
-          </div>
+          <div className="toast-progress h-[3px] w-full bg-green-500" />
         </div>
       )}
 
@@ -278,6 +269,7 @@ export default function EditProfilePage() {
         {/* Main Card */}
         <div
           className="
+            profile-edit-main-card
             relative overflow-hidden rounded-[34px]
             border border-[rgba(255,255,255,0.85)]
             bg-[linear-gradient(145deg,rgba(248,244,255,0.98)_0%,rgba(239,234,255,0.96)_48%,rgba(247,243,255,0.98)_100%)]
@@ -329,6 +321,7 @@ export default function EditProfilePage() {
               {/* Upload button */}
               <label
                 className="
+                  profile-upload-button
                   inline-flex cursor-pointer items-center justify-center
                   rounded-[15px]
                   border border-[rgba(255,255,255,0.24)]

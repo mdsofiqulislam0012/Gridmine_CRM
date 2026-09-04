@@ -1,10 +1,56 @@
 "use client";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import AppSidebar from "./AppSidebar";
 import AppHeader from "./AppHeader";
 
 export default function CrmShell({ children }: { children: React.ReactNode }) {
   const [sidebarOpen, setSidebarOpen] = useState(false);
+      useEffect(() => {
+      const applySavedTheme = () => {
+        const savedTheme =
+          localStorage.getItem("gridmine-theme") ?? "light";
+
+        const systemDark = window.matchMedia(
+          "(prefers-color-scheme: dark)"
+        ).matches;
+
+        const shouldUseDark =
+          savedTheme === "dark" ||
+          (savedTheme === "system" && systemDark);
+
+        document.documentElement.classList.toggle(
+          "dark",
+          shouldUseDark
+        );
+
+        document.documentElement.dataset.theme = shouldUseDark
+          ? "dark"
+          : "light";
+      };
+
+      applySavedTheme();
+
+      const media = window.matchMedia(
+        "(prefers-color-scheme: dark)"
+      );
+
+      const handleSystemThemeChange = () => {
+        if (localStorage.getItem("gridmine-theme") === "system") {
+          applySavedTheme();
+        }
+      };
+
+      media.addEventListener("change", handleSystemThemeChange);
+
+      return () => {
+        media.removeEventListener(
+          "change",
+          handleSystemThemeChange
+        );
+      };
+    }, []);
+
+
   return (
     <div className="flex min-h-screen">
       <AppSidebar open={sidebarOpen} onClose={() => setSidebarOpen(false)} />

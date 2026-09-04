@@ -12,6 +12,10 @@ import {
   LogOut,
   UserRound,
   Pencil,
+  Settings,
+  Palette,
+  ShieldCheck,
+  CircleHelp,
 } from "lucide-react";
 import { useAuth } from "@/lib/auth";
 
@@ -142,7 +146,49 @@ export default function AppHeader({ onMenuClick }: { onMenuClick: () => void }) 
         <Pencil size={17} />
         Edit Profile
       </Link>
+      <Link
+  href="/settings/account"
+  className="flex items-center gap-3 px-4 py-2.5 text-sm text-gray-700 transition hover:bg-gray-50"
+>
+  <Settings size={16} />
+  Account Settings
+</Link>
+
+<Link
+  href="/settings/notifications"
+  className="flex items-center gap-3 px-4 py-2.5 text-sm text-gray-700 transition hover:bg-gray-50"
+>
+  <Bell size={16} />
+  Notifications
+</Link>
+
+<Link
+  href="/settings/appearance"
+  className="flex items-center gap-3 px-4 py-2.5 text-sm text-gray-700 transition hover:bg-gray-50"
+>
+  <Palette size={16} />
+  Appearance
+</Link>
+
+<Link
+  href="/settings/security"
+  className="flex items-center gap-3 px-4 py-2.5 text-sm text-gray-700 transition hover:bg-gray-50"
+>
+  <ShieldCheck size={16} />
+  Security
+</Link>
+
+<div className="my-1 border-t border-gray-100" />
+
+<Link
+  href="/support"
+  className="flex items-center gap-3 px-4 py-2.5 text-sm text-gray-700 transition hover:bg-gray-50"
+>
+  <CircleHelp size={16} />
+  Help & Support
+</Link>
     </div>
+
 
     {/* Logout */}
     <div className="border-t border-gray-100 p-2">

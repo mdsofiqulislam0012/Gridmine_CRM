@@ -39,7 +39,7 @@ export default function AppSidebar({ open, onClose }: { open: boolean; onClose: 
     <>
       {open && <div className="fixed inset-0 z-30 bg-black/30 lg:hidden" onClick={onClose} />}
       <aside
-        className={`fixed inset-y-0 left-0 z-40 flex w-60 shrink-0 flex-col border-r border-border-subtle bg-white transition-transform lg:static lg:translate-x-0 ${
+        className={`fixed inset-y-0 left-0 z-40 flex w-60 shrink-0 flex-col border-r border-border-subtle bg-white transition-transform lg:sticky lg:top-0 lg:h-screen lg:self-start   lg:translate-x-0 ${
           open ? "translate-x-0" : "-translate-x-full"
         }`}
       >

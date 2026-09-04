@@ -87,7 +87,7 @@ export default function ProfilePage() {
   }
 
   return (
-  <div className="profile-page-enter min-h-[calc(100vh-60px)] bg-[rgba(247,248,252,1)] px-5 py-8 md:px-8 md:py-10">
+  <div className="profile-page-enter min-h-[calc(100vh-60px)] bg-[rgba(247,248,252,1)] px-5 py-8 md:px-8 md:py-10 profile-theme-page">
     <div className="mx-auto max-w-5xl">
 
       {/* Error */}
@@ -114,13 +114,12 @@ export default function ProfilePage() {
         {/* Main Card */}
         <div
           className="
+            profile-main-card
             relative overflow-hidden rounded-[34px]
             border border-[rgba(255,255,255,0.85)]
             bg-[linear-gradient(145deg,rgba(248,244,255,0.98)_0%,rgba(239,234,255,0.96)_48%,rgba(247,243,255,0.98)_100%)]
             shadow-[0_32px_75px_rgba(94,72,160,0.18),inset_0_2px_3px_rgba(255,255,255,0.95),inset_0_-3px_8px_rgba(117,85,205,0.07)]
-            [transform:rotateX(1.5deg)]
             transition-all duration-500
-            hover:[transform:rotateX(0deg)_translateY(-3px)]
             hover:shadow-[0_40px_85px_rgba(94,72,160,0.22)]
           "
         >
@@ -212,6 +211,7 @@ export default function ProfilePage() {
           <div className="relative z-10 px-5 pb-5 md:px-7 md:pb-7">
             <div
               className="
+                profile-info-panel
                 relative overflow-hidden rounded-[28px]
                 border border-[rgba(255,255,255,0.78)]
                 bg-[rgba(255,255,255,0.48)]
@@ -363,6 +363,7 @@ export default function ProfilePage() {
                 {/* BIO */}
                 <div
                   className="
+                    profile-bio-card
                     relative mt-4 overflow-hidden rounded-[22px]
                     border border-[rgba(187,146,239,0.17)]
                     bg-[linear-gradient(145deg,rgba(249,243,255,0.82),rgba(255,255,255,0.60))]
@@ -375,6 +376,7 @@ export default function ProfilePage() {
                   <div className="relative">
                     <span
                       className="
+                        profile-bio-label
                         inline-flex rounded-xl
                         border border-[rgba(175,117,236,0.12)]
                         bg-[rgba(179,118,244,0.11)]
@@ -386,7 +388,7 @@ export default function ProfilePage() {
                       Bio
                     </span>
 
-                    <p className="mt-3 whitespace-pre-wrap text-[14px] leading-7 text-[rgba(65,60,82,0.84)]">
+                    <p className="profile-bio-text mt-3 whitespace-pre-wrap text-[14px] leading-7 text-[rgba(65,60,82,0.84)]">
                       {profile.bio || "No bio added yet."}
                     </p>
                   </div>

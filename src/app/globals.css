@@ -167,3 +167,617 @@ body {
   transform-origin: left;
   animation: toast-progress 1.8s linear forwards;
 }
+
+@keyframes toast-card-motion {
+  0% {
+    opacity: 0;
+    transform: translateX(70px) translateY(12px) scale(0.92);
+  }
+
+  10% {
+    opacity: 1;
+    transform: translateX(-6px) translateY(0) scale(1.02);
+  }
+
+  16% {
+    transform: translateX(0) translateY(0) scale(1);
+  }
+
+  82% {
+    opacity: 1;
+    transform: translateX(0) translateY(0) scale(1);
+  }
+
+  90% {
+    opacity: 1;
+    transform: translateX(-5px) scale(0.99);
+  }
+
+  100% {
+    opacity: 0;
+    transform: translateX(80px) translateY(8px) scale(0.94);
+  }
+}
+
+.toast-card-motion {
+  transform-origin: bottom right;
+  animation: toast-card-motion 2.6s cubic-bezier(0.22, 1, 0.36, 1) both;
+}
+
+@keyframes toast-progress {
+  from {
+    transform: scaleX(1);
+  }
+
+  to {
+    transform: scaleX(0);
+  }
+}
+
+.toast-progress {
+  transform-origin: left;
+  animation: toast-progress 2.6s linear forwards;
+}
+
+
+
+/* =========================================
+   GRIDMINE CRM - DARK MODE
+   ========================================= */
+
+html.dark,
+html[data-theme="dark"] {
+  color-scheme: dark;
+  background: #0b1120;
+}
+
+/* Main page backgrounds */
+html.dark body,
+html[data-theme="dark"] body {
+  background: #0b1120 !important;
+  color: #e5e7eb !important;
+}
+
+/* White cards / panels / sidebar / header */
+html.dark .bg-white,
+html.dark .bg-white\/95,
+html.dark .bg-white\/90,
+html[data-theme="dark"] .bg-white,
+html[data-theme="dark"] .bg-white\/95,
+html[data-theme="dark"] .bg-white\/90 {
+  background-color: #111827 !important;
+}
+
+/* Light page backgrounds */
+html.dark .bg-gray-50,
+html[data-theme="dark"] .bg-gray-50 {
+  background-color: #0f172a !important;
+}
+
+html.dark .bg-gray-100,
+html[data-theme="dark"] .bg-gray-100 {
+  background-color: #1f2937 !important;
+}
+
+/* Main text */
+html.dark .text-gray-900,
+html[data-theme="dark"] .text-gray-900 {
+  color: #f9fafb !important;
+}
+
+html.dark .text-gray-800,
+html[data-theme="dark"] .text-gray-800 {
+  color: #f3f4f6 !important;
+}
+
+html.dark .text-gray-700,
+html[data-theme="dark"] .text-gray-700 {
+  color: #e5e7eb !important;
+}
+
+html.dark .text-gray-600,
+html[data-theme="dark"] .text-gray-600 {
+  color: #d1d5db !important;
+}
+
+html.dark .text-gray-500,
+html[data-theme="dark"] .text-gray-500 {
+  color: #9ca3af !important;
+}
+
+html.dark .text-gray-400,
+html[data-theme="dark"] .text-gray-400 {
+  color: #94a3b8 !important;
+}
+
+/* Borders */
+html.dark .border-gray-100,
+html.dark .border-gray-200,
+html.dark .border-gray-300,
+html.dark .border-border-subtle,
+html[data-theme="dark"] .border-gray-100,
+html[data-theme="dark"] .border-gray-200,
+html[data-theme="dark"] .border-gray-300,
+html[data-theme="dark"] .border-border-subtle {
+  border-color: #273449 !important;
+}
+
+/* Inputs / selects / textarea */
+html.dark input,
+html.dark select,
+html.dark textarea,
+html[data-theme="dark"] input,
+html[data-theme="dark"] select,
+html[data-theme="dark"] textarea {
+  background-color: #111827 !important;
+  color: #f9fafb !important;
+  border-color: #334155 !important;
+}
+
+html.dark input::placeholder,
+html.dark textarea::placeholder,
+html[data-theme="dark"] input::placeholder,
+html[data-theme="dark"] textarea::placeholder {
+  color: #64748b !important;
+}
+
+/* Table */
+html.dark table,
+html[data-theme="dark"] table {
+  background-color: #111827 !important;
+}
+
+html.dark thead,
+html[data-theme="dark"] thead {
+  background-color: #0f172a !important;
+}
+
+html.dark tbody tr,
+html[data-theme="dark"] tbody tr {
+  border-color: #273449 !important;
+}
+
+html.dark tbody tr:hover,
+html[data-theme="dark"] tbody tr:hover {
+  background-color: #172033 !important;
+}
+
+/* Dropdowns / menus */
+html.dark [class*="shadow-"],
+html[data-theme="dark"] [class*="shadow-"] {
+  --tw-shadow-color: rgba(0, 0, 0, 0.35);
+}
+
+/* Neutral hover backgrounds */
+html.dark .hover\:bg-gray-50:hover,
+html[data-theme="dark"] .hover\:bg-gray-50:hover {
+  background-color: #1e293b !important;
+}
+
+html.dark .hover\:bg-gray-100:hover,
+html[data-theme="dark"] .hover\:bg-gray-100:hover {
+  background-color: #263449 !important;
+}
+
+/* Keep brand colored buttons intact */
+html.dark .bg-brand,
+html[data-theme="dark"] .bg-brand {
+  color: white !important;
+}
+
+/* =========================================
+   GRIDMINE DARK MODE - UI CONSISTENCY PATCH
+   ========================================= */
+
+/* Transparent / translucent white surfaces */
+html.dark .bg-white\/95,
+html.dark .bg-white\/90,
+html.dark .bg-white\/80,
+html.dark .bg-white\/70,
+html.dark .bg-white\/60,
+html.dark .bg-white\/50,
+html[data-theme="dark"] .bg-white\/95,
+html[data-theme="dark"] .bg-white\/90,
+html[data-theme="dark"] .bg-white\/80,
+html[data-theme="dark"] .bg-white\/70,
+html[data-theme="dark"] .bg-white\/60,
+html[data-theme="dark"] .bg-white\/50 {
+  background-color: rgba(17, 24, 39, 0.96) !important;
+}
+
+/* Light translucent cards */
+html.dark .bg-gray-50\/70,
+html.dark .bg-gray-50\/80,
+html.dark .bg-gray-50\/90,
+html[data-theme="dark"] .bg-gray-50\/70,
+html[data-theme="dark"] .bg-gray-50\/80,
+html[data-theme="dark"] .bg-gray-50\/90 {
+  background-color: #172033 !important;
+}
+
+/* Slate backgrounds */
+html.dark .bg-slate-50,
+html[data-theme="dark"] .bg-slate-50 {
+  background-color: #111827 !important;
+}
+
+html.dark .bg-slate-100,
+html[data-theme="dark"] .bg-slate-100 {
+  background-color: #172033 !important;
+}
+
+/* White translucent borders */
+html.dark .border-white\/60,
+html.dark .border-white\/70,
+html.dark .border-white\/80,
+html[data-theme="dark"] .border-white\/60,
+html[data-theme="dark"] .border-white\/70,
+html[data-theme="dark"] .border-white\/80 {
+  border-color: #334155 !important;
+}
+
+/* Slate text */
+html.dark .text-slate-900,
+html[data-theme="dark"] .text-slate-900 {
+  color: #f8fafc !important;
+}
+
+html.dark .text-slate-700,
+html[data-theme="dark"] .text-slate-700 {
+  color: #e2e8f0 !important;
+}
+
+html.dark .text-slate-500,
+html[data-theme="dark"] .text-slate-500 {
+  color: #94a3b8 !important;
+}
+
+/* Modal detail cards */
+html.dark .rounded-xl.bg-gray-50\/70,
+html[data-theme="dark"] .rounded-xl.bg-gray-50\/70 {
+  background: #172033 !important;
+  border-color: #334155 !important;
+}
+
+/* Disabled / neutral form areas */
+html.dark input:disabled,
+html.dark textarea:disabled,
+html.dark select:disabled,
+html[data-theme="dark"] input:disabled,
+html[data-theme="dark"] textarea:disabled,
+html[data-theme="dark"] select:disabled {
+  background-color: #1e293b !important;
+  color: #94a3b8 !important;
+}
+
+/* Modal overlays */
+html.dark .bg-black\/40,
+html[data-theme="dark"] .bg-black\/40 {
+  background-color: rgba(0, 0, 0, 0.62) !important;
+}
+
+
+/* =========================================
+   PROFILE PAGE - DARK MODE FIX
+   ========================================= */
+
+html.dark .profile-theme-page,
+html[data-theme="dark"] .profile-theme-page {
+  background: #0b1120 !important;
+  color: #f8fafc !important;
+}
+
+/* Profile-এর custom rgba light cards */
+html.dark .profile-theme-page [class*="bg-[rgba"],
+html[data-theme="dark"] .profile-theme-page [class*="bg-[rgba"] {
+  background: rgba(17, 24, 39, 0.96) !important;
+}
+
+/* Custom borders */
+html.dark .profile-theme-page [class*="border-[rgba"],
+html[data-theme="dark"] .profile-theme-page [class*="border-[rgba"] {
+  border-color: rgba(71, 85, 105, 0.75) !important;
+}
+
+/* Keep 3D effect in dark mode */
+html.dark .profile-theme-page [class*="shadow"],
+html[data-theme="dark"] .profile-theme-page [class*="shadow"] {
+  box-shadow:
+    0 20px 45px rgba(0, 0, 0, 0.38),
+    0 8px 20px rgba(15, 23, 42, 0.42),
+    inset 0 1px 0 rgba(255, 255, 255, 0.06) !important;
+}
+
+/* Dark text correction */
+html.dark .profile-theme-page .text-gray-900,
+html.dark .profile-theme-page .text-gray-800,
+html.dark .profile-theme-page .text-gray-700,
+html[data-theme="dark"] .profile-theme-page .text-gray-900,
+html[data-theme="dark"] .profile-theme-page .text-gray-800,
+html[data-theme="dark"] .profile-theme-page .text-gray-700 {
+  color: #f1f5f9 !important;
+}
+
+html.dark .profile-theme-page .text-gray-500,
+html.dark .profile-theme-page .text-gray-400,
+html[data-theme="dark"] .profile-theme-page .text-gray-500,
+html[data-theme="dark"] .profile-theme-page .text-gray-400 {
+  color: #94a3b8 !important;
+}
+
+
+
+/* =========================================
+   PROFILE 3D CARD - DARK MODE
+   ========================================= */
+
+html.dark .profile-main-card,
+html[data-theme="dark"] .profile-main-card {
+  background:
+    linear-gradient(
+      145deg,
+      #182235 0%,
+      #111827 48%,
+      #172033 100%
+    ) !important;
+
+  border-color: #3b4a61 !important;
+
+  box-shadow:
+    0 32px 75px rgba(0, 0, 0, 0.48),
+    0 12px 30px rgba(0, 0, 0, 0.30),
+    inset 0 2px 3px rgba(255, 255, 255, 0.06),
+    inset 0 -3px 8px rgba(0, 0, 0, 0.20) !important;
+}
+
+html.dark .profile-info-panel,
+html[data-theme="dark"] .profile-info-panel {
+  background:
+    linear-gradient(
+      145deg,
+      #111827 0%,
+      #162033 100%
+    ) !important;
+
+  border-color: #334155 !important;
+
+  box-shadow:
+    0 20px 45px rgba(0, 0, 0, 0.36),
+    inset 0 1px 2px rgba(255, 255, 255, 0.05) !important;
+}
+
+/* Email / Phone / Job / Bio cards */
+html.dark .profile-info-panel .grid > div,
+html[data-theme="dark"] .profile-info-panel .grid > div {
+  background:
+    linear-gradient(
+      145deg,
+      #1b2638 0%,
+      #141d2d 100%
+    ) !important;
+
+  border-color: #344258 !important;
+
+  box-shadow:
+    0 10px 24px rgba(0, 0, 0, 0.25),
+    inset 0 1px 1px rgba(255, 255, 255, 0.05) !important;
+}
+
+/* Profile headings */
+html.dark .profile-theme-page h1,
+html.dark .profile-theme-page h2,
+html.dark .profile-theme-page h3,
+html[data-theme="dark"] .profile-theme-page h1,
+html[data-theme="dark"] .profile-theme-page h2,
+html[data-theme="dark"] .profile-theme-page h3 {
+  color: #f8fafc !important;
+}
+
+/* Main profile values */
+html.dark .profile-info-panel .grid > div p:last-child,
+html[data-theme="dark"] .profile-info-panel .grid > div p:last-child {
+  color: #e5e7eb !important;
+}
+
+html.dark .profile-bio-card,
+html[data-theme="dark"] .profile-bio-card {
+  background:
+    linear-gradient(
+      145deg,
+      #1b2638 0%,
+      #141d2d 100%
+    ) !important;
+
+  border-color: #344258 !important;
+
+  box-shadow:
+    0 10px 24px rgba(0, 0, 0, 0.25),
+    inset 0 1px 1px rgba(255, 255, 255, 0.05) !important;
+
+  color: #e5e7eb !important;
+}
+
+/* =========================================
+   PROFILE BIO - READABILITY
+   ========================================= */
+
+.profile-bio-label {
+  font-size: 12px !important;
+  font-weight: 700 !important;
+  line-height: 1 !important;
+}
+
+.profile-bio-text {
+  font-size: 14px !important;
+  line-height: 1.65 !important;
+  font-weight: 500 !important;
+}
+
+html.dark .profile-bio-label,
+html[data-theme="dark"] .profile-bio-label {
+  color: #c4b5fd !important;
+  background: rgba(124, 58, 237, 0.14) !important;
+  border-color: rgba(167, 139, 250, 0.22) !important;
+}
+
+html.dark .profile-bio-text,
+html[data-theme="dark"] .profile-bio-text {
+  color: #e2e8f0 !important;
+}
+
+
+
+/* =========================================
+   EDIT PROFILE - DARK MODE
+   ========================================= */
+
+html.dark .profile-edit-theme-page,
+html[data-theme="dark"] .profile-edit-theme-page {
+  background: #0b1120 !important;
+  color: #f8fafc !important;
+}
+
+html.dark .profile-edit-main-card,
+html[data-theme="dark"] .profile-edit-main-card {
+  background:
+    linear-gradient(
+      145deg,
+      #182235 0%,
+      #111827 48%,
+      #172033 100%
+    ) !important;
+
+  border-color: #3b4a61 !important;
+
+  box-shadow:
+    0 32px 75px rgba(0, 0, 0, 0.48),
+    0 12px 30px rgba(0, 0, 0, 0.30),
+    inset 0 2px 3px rgba(255, 255, 255, 0.06),
+    inset 0 -3px 8px rgba(0, 0, 0, 0.20) !important;
+}
+
+/* Light custom panels inside Edit Profile */
+html.dark .profile-edit-main-card [class*="bg-[rgba"],
+html[data-theme="dark"] .profile-edit-main-card [class*="bg-[rgba"] {
+  background: #162033 !important;
+}
+
+/* Custom borders */
+html.dark .profile-edit-main-card [class*="border-[rgba"],
+html[data-theme="dark"] .profile-edit-main-card [class*="border-[rgba"] {
+  border-color: #334155 !important;
+}
+
+/* Heading + labels */
+html.dark .profile-edit-theme-page h1,
+html.dark .profile-edit-theme-page h2,
+html.dark .profile-edit-theme-page h3,
+html.dark .profile-edit-theme-page label,
+html[data-theme="dark"] .profile-edit-theme-page h1,
+html[data-theme="dark"] .profile-edit-theme-page h2,
+html[data-theme="dark"] .profile-edit-theme-page h3,
+html[data-theme="dark"] .profile-edit-theme-page label {
+  color: #f1f5f9 !important;
+}
+
+/* Helper text */
+html.dark .profile-edit-theme-page p,
+html[data-theme="dark"] .profile-edit-theme-page p {
+  color: #94a3b8;
+}
+
+/* =========================================
+   PROFILE TEXT / UI SHARPNESS FIX
+   ========================================= */
+
+.profile-theme-page,
+.profile-edit-theme-page {
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+  text-rendering: optimizeLegibility;
+}
+
+/* Do not transform the actual text container */
+.profile-main-card,
+.profile-edit-main-card,
+.profile-info-panel {
+  transform: none !important;
+  filter: none !important;
+  backface-visibility: visible !important;
+}
+
+/* Keep all text/buttons crisp */
+.profile-theme-page h1,
+.profile-theme-page h2,
+.profile-theme-page h3,
+.profile-theme-page p,
+.profile-theme-page span,
+.profile-theme-page button,
+.profile-theme-page a,
+.profile-edit-theme-page h1,
+.profile-edit-theme-page h2,
+.profile-edit-theme-page h3,
+.profile-edit-theme-page p,
+.profile-edit-theme-page span,
+.profile-edit-theme-page label,
+.profile-edit-theme-page input,
+.profile-edit-theme-page textarea,
+.profile-edit-theme-page button {
+  filter: none !important;
+  text-shadow: none !important;
+}
+
+/* Buttons should stay sharp */
+.profile-theme-page button,
+.profile-theme-page a,
+.profile-edit-theme-page button,
+.profile-edit-theme-page a {
+  transform: translateZ(0);
+  backface-visibility: hidden;
+}
+
+
+/* =========================================
+   PROFILE FINAL READABILITY POLISH
+   ========================================= */
+
+/* My Profile secondary text */
+html.dark .profile-theme-page .profile-main-card p:not(.profile-bio-text),
+html[data-theme="dark"] .profile-theme-page .profile-main-card p:not(.profile-bio-text) {
+  color: #aab4c4 !important;
+}
+
+/* Keep Bio value stronger */
+html.dark .profile-theme-page .profile-bio-text,
+html[data-theme="dark"] .profile-theme-page .profile-bio-text {
+  color: #e2e8f0 !important;
+}
+
+/* Edit Profile field labels */
+html.dark .profile-edit-theme-page label,
+html[data-theme="dark"] .profile-edit-theme-page label {
+  color: #aeb8c8 !important;
+}
+
+/* Edit Profile helper / secondary text */
+html.dark .profile-edit-theme-page p,
+html[data-theme="dark"] .profile-edit-theme-page p {
+  color: #9ca9ba !important;
+}
+
+/* Input text stays strong */
+html.dark .profile-edit-theme-page input,
+html.dark .profile-edit-theme-page textarea,
+html[data-theme="dark"] .profile-edit-theme-page input,
+html[data-theme="dark"] .profile-edit-theme-page textarea {
+  color: #f1f5f9 !important;
+}
+/* Edit Profile Upload Button */
+.profile-edit-theme-page .profile-upload-button,
+html.dark .profile-edit-theme-page .profile-upload-button,
+html[data-theme="dark"] .profile-edit-theme-page .profile-upload-button {
+  color: #ffffff !important;
+  font-weight: 700 !important;
+  opacity: 1 !important;
+  text-shadow: none !important;
+}
