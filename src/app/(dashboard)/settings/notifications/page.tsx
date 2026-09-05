@@ -1,9 +1,11 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { Bell, CheckCircle2, Mail, X } from "lucide-react";
+import { createClient } from "@/lib/supabase/client";
 
 export default function NotificationSettingsPage() {
+  const supabase = useMemo(() => createClient(), []);
   const [emailNotifications, setEmailNotifications] = useState(true);
   const [projectUpdates, setProjectUpdates] = useState(true);
   const [taskUpdates, setTaskUpdates] = useState(true);
@@ -12,38 +14,86 @@ export default function NotificationSettingsPage() {
   const [settingsReady, setSettingsReady] = useState(false);
   const [success, setSuccess] = useState("");
 
-  useEffect(() => {
-    const saved = localStorage.getItem("notificationSettings");
+      useEffect(() => {
+      const loadNotificationSettings = async () => {
+        const {
+          data: { user },
+        } = await supabase.auth.getUser();
 
-    if (saved) {
-      const parsed = JSON.parse(saved);
+        if (!user) {
+          setSettingsReady(true);
+          return;
+        }
 
-      setEmailNotifications(parsed.emailNotifications ?? true);
-      setProjectUpdates(parsed.projectUpdates ?? true);
-      setTaskUpdates(parsed.taskUpdates ?? true);
-      setCustomerUpdates(parsed.customerUpdates ?? true);
-    }
+        const { data, error } = await supabase
+          .from("notification_preferences")
+          .select(
+            "email_notifications, project_updates, task_updates, customer_updates"
+          )
+          .eq("user_id", user.id)
+          .maybeSingle();
 
-    setSettingsReady(true);
-  }, []);
+        if (error) {
+          console.error("Error loading notification settings:", error);
+          setSettingsReady(true);
+          return;
+        }
 
-  const handleSave = () => {
-    localStorage.setItem(
-      "notificationSettings",
-      JSON.stringify({
-        emailNotifications,
-        projectUpdates,
-        taskUpdates,
-        customerUpdates,
-      })
+        if (data) {
+          setEmailNotifications(data.email_notifications);
+          setProjectUpdates(data.project_updates);
+          setTaskUpdates(data.task_updates);
+          setCustomerUpdates(data.customer_updates);
+        }
+
+        setSettingsReady(true);
+      };
+
+      loadNotificationSettings();
+    }, [supabase]);
+
+    const handleSave = async () => {
+  setSuccess("");
+
+  const {
+    data: { user },
+    error: userError,
+  } = await supabase.auth.getUser();
+
+  if (userError || !user) {
+    console.error("User error:", userError);
+    alert("User session not found.");
+    return;
+  }
+
+  const { error: saveError } = await supabase
+    .from("notification_preferences")
+    .upsert(
+      {
+        user_id: user.id,
+        email_notifications: emailNotifications,
+        project_updates: projectUpdates,
+        task_updates: taskUpdates,
+        customer_updates: customerUpdates,
+        updated_at: new Date().toISOString(),
+      },
+      {
+        onConflict: "user_id",
+      }
     );
 
-    setSuccess("Notification preferences saved successfully!");
+  if (saveError) {
+    console.error("Notification save error:", saveError);
+    alert(saveError.message);
+    return;
+  }
 
-    setTimeout(() => {
-      setSuccess("");
-    }, 2600);
-  };
+  setSuccess("Notification preferences saved successfully!");
+
+  setTimeout(() => {
+    setSuccess("");
+  }, 2600);
+};
 
   if (!settingsReady) {
     return (

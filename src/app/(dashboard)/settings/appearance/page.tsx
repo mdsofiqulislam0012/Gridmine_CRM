@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import {
   Check,
   CheckCircle2,
@@ -9,19 +9,42 @@ import {
   Sun,
   X,
 } from "lucide-react";
+import { createClient } from "@/lib/supabase/client";
 
 type ThemeMode = "light" | "dark" | "system";
 
 export default function AppearanceSettingsPage() {
+  const supabase = useMemo(() => createClient(), []);
   const [theme, setTheme] = useState<ThemeMode>("light");
   const [success, setSuccess] = useState("");
 
   useEffect(() => {
-    const savedTheme =
-      (localStorage.getItem("gridmine-theme") as ThemeMode | null) ?? "light";
+  const loadAppearance = async () => {
+    const {
+      data: { user },
+    } = await supabase.auth.getUser();
+
+    if (!user) return;
+
+    const { data, error } = await supabase
+      .from("profiles")
+      .select("appearance_mode")
+      .eq("id", user.id)
+      .single();
+
+    if (error) {
+      console.error("Error loading appearance:", error);
+      return;
+    }
+
+    const savedTheme = (data?.appearance_mode ?? "system") as ThemeMode;
 
     setTheme(savedTheme);
-  }, []);
+    applyTheme(savedTheme);
+  };
+
+  loadAppearance();
+}, [supabase]);
 
   const applyTheme = (mode: ThemeMode) => {
     const root = document.documentElement;
@@ -35,16 +58,42 @@ export default function AppearanceSettingsPage() {
     root.dataset.theme = shouldUseDark ? "dark" : "light";
   };
 
-  const handleSave = () => {
-    localStorage.setItem("gridmine-theme", theme);
-    applyTheme(theme);
+  const handleSave = async () => {
+  const {
+    data: { user },
+    error: userError,
+  } = await supabase.auth.getUser();
 
-    setSuccess("Appearance settings saved successfully!");
+  if (userError || !user) {
+    console.error("Unable to identify user:", userError);
+    alert("User session not found.");
+    return;
+  }
 
-    setTimeout(() => {
-      setSuccess("");
-    }, 2600);
-  };
+  const { error: updateError } = await supabase
+    .from("profiles")
+    .update({
+      appearance_mode: theme,
+    })
+    .eq("id", user.id);
+
+  if (updateError) {
+    console.error("Error saving appearance:", updateError);
+    alert(updateError.message);
+    return;
+  }
+
+  // Keep local cache so the current CRM shell updates immediately.
+  localStorage.setItem("gridmine-theme", theme);
+
+  applyTheme(theme);
+
+  setSuccess("Appearance settings saved successfully!");
+
+  setTimeout(() => {
+    setSuccess("");
+  }, 2600);
+};
 
   return (
     <div className="mx-auto w-full max-w-4xl space-y-6 p-6">

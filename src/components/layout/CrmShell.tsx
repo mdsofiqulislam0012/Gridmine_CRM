@@ -1,54 +1,88 @@
 "use client";
-import { useEffect, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import AppSidebar from "./AppSidebar";
 import AppHeader from "./AppHeader";
+import { createClient } from "@/lib/supabase/client";
+
 
 export default function CrmShell({ children }: { children: React.ReactNode }) {
+  const supabase = useMemo(() => createClient(), []);
   const [sidebarOpen, setSidebarOpen] = useState(false);
-      useEffect(() => {
-      const applySavedTheme = () => {
-        const savedTheme =
-          localStorage.getItem("gridmine-theme") ?? "light";
 
-        const systemDark = window.matchMedia(
-          "(prefers-color-scheme: dark)"
-        ).matches;
+  useEffect(() => {
+  const applyTheme = (mode: "light" | "dark" | "system") => {
+    const isDark =
+      mode === "dark" ||
+      (mode === "system" &&
+        window.matchMedia("(prefers-color-scheme: dark)").matches);
 
-        const shouldUseDark =
-          savedTheme === "dark" ||
-          (savedTheme === "system" && systemDark);
+    document.documentElement.classList.toggle("dark", isDark);
+    document.documentElement.dataset.theme = mode;
+  };
 
-        document.documentElement.classList.toggle(
-          "dark",
-          shouldUseDark
-        );
+  const loadTheme = async () => {
+    const {
+      data: { user },
+    } = await supabase.auth.getUser();
 
-        document.documentElement.dataset.theme = shouldUseDark
-          ? "dark"
-          : "light";
-      };
+    if (!user) {
+      const localTheme =
+        (localStorage.getItem("gridmine-theme") as
+          | "light"
+          | "dark"
+          | "system") || "system";
 
-      applySavedTheme();
+      applyTheme(localTheme);
+      return;
+    }
 
-      const media = window.matchMedia(
-        "(prefers-color-scheme: dark)"
+    const { data, error } = await supabase
+      .from("profiles")
+      .select("appearance_mode")
+      .eq("id", user.id)
+      .single();
+
+    if (error) {
+      console.error("Error loading saved theme:", error);
+      return;
+    }
+
+    const savedTheme =
+      (data?.appearance_mode as "light" | "dark" | "system") || "system";
+
+    localStorage.setItem("gridmine-theme", savedTheme);
+    applyTheme(savedTheme);
+  };
+
+  loadTheme();
+}, [supabase]);
+
+useEffect(() => {
+  const mediaQuery = window.matchMedia("(prefers-color-scheme: dark)");
+
+  const handleSystemThemeChange = () => {
+    const currentTheme =
+      (localStorage.getItem("gridmine-theme") as
+        | "light"
+        | "dark"
+        | "system") || "system";
+
+    if (currentTheme === "system") {
+      document.documentElement.classList.toggle(
+        "dark",
+        mediaQuery.matches
       );
 
-      const handleSystemThemeChange = () => {
-        if (localStorage.getItem("gridmine-theme") === "system") {
-          applySavedTheme();
-        }
-      };
+      document.documentElement.dataset.theme = "system";
+    }
+  };
 
-      media.addEventListener("change", handleSystemThemeChange);
+  mediaQuery.addEventListener("change", handleSystemThemeChange);
 
-      return () => {
-        media.removeEventListener(
-          "change",
-          handleSystemThemeChange
-        );
-      };
-    }, []);
+  return () => {
+    mediaQuery.removeEventListener("change", handleSystemThemeChange);
+  };
+}, []);
 
 
   return (
