@@ -1,6 +1,6 @@
 "use client";
 import Link from "next/link";
-import { useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import {
   Menu,
   Search,
@@ -24,6 +24,24 @@ export default function AppHeader({ onMenuClick }: { onMenuClick: () => void }) 
   const [quickOpen, setQuickOpen] = useState(false);
   const [notifOpen, setNotifOpen] = useState(false);
   const [profileOpen, setProfileOpen] = useState(false);
+  const profileMenuRef = useRef<HTMLDivElement | null>(null);
+
+  useEffect(() => {
+  const handleClickOutside = (event: MouseEvent) => {
+    if (
+      profileMenuRef.current &&
+      !profileMenuRef.current.contains(event.target as Node)
+    ) {
+      setProfileOpen(false);
+    }
+  };
+
+  document.addEventListener("mousedown", handleClickOutside);
+
+  return () => {
+    document.removeEventListener("mousedown", handleClickOutside);
+  };
+}, []);
 
   return (
     <header className="sticky top-0 z-20 flex items-center gap-3 border-b border-border-subtle bg-white px-4 py-2.5">
@@ -63,9 +81,9 @@ export default function AppHeader({ onMenuClick }: { onMenuClick: () => void }) 
             </div>
           )}
         </div>
-        <div className="relative">
+        <div ref={profileMenuRef} className="relative">
         <button
-          onClick={() => setProfileOpen((v) => !v)}
+          onClick={() => setProfileOpen(true)}
           className="ml-1 flex h-8 w-8 items-center justify-center overflow-hidden rounded-full bg-brand-dark text-xs font-semibold text-white"
         >
           {user?.avatar_url ? (
@@ -148,6 +166,7 @@ export default function AppHeader({ onMenuClick }: { onMenuClick: () => void }) 
       </Link>
       <Link
   href="/settings/account"
+  onClick={() => setProfileOpen(false)}
   className="flex items-center gap-3 px-4 py-2.5 text-sm text-gray-700 transition hover:bg-gray-50"
 >
   <Settings size={16} />
@@ -156,6 +175,7 @@ export default function AppHeader({ onMenuClick }: { onMenuClick: () => void }) 
 
 <Link
   href="/settings/notifications"
+  onClick={() => setProfileOpen(false)}
   className="flex items-center gap-3 px-4 py-2.5 text-sm text-gray-700 transition hover:bg-gray-50"
 >
   <Bell size={16} />
@@ -164,6 +184,7 @@ export default function AppHeader({ onMenuClick }: { onMenuClick: () => void }) 
 
 <Link
   href="/settings/appearance"
+  onClick={() => setProfileOpen(false)}
   className="flex items-center gap-3 px-4 py-2.5 text-sm text-gray-700 transition hover:bg-gray-50"
 >
   <Palette size={16} />
@@ -172,6 +193,7 @@ export default function AppHeader({ onMenuClick }: { onMenuClick: () => void }) 
 
 <Link
   href="/settings/security"
+  onClick={() => setProfileOpen(false)}
   className="flex items-center gap-3 px-4 py-2.5 text-sm text-gray-700 transition hover:bg-gray-50"
 >
   <ShieldCheck size={16} />
@@ -182,6 +204,7 @@ export default function AppHeader({ onMenuClick }: { onMenuClick: () => void }) 
 
 <Link
   href="/support"
+  onClick={() => setProfileOpen(false)}
   className="flex items-center gap-3 px-4 py-2.5 text-sm text-gray-700 transition hover:bg-gray-50"
 >
   <CircleHelp size={16} />

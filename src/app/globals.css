@@ -781,3 +781,65 @@ html[data-theme="dark"] .profile-edit-theme-page .profile-upload-button {
   opacity: 1 !important;
   text-shadow: none !important;
 }
+
+
+/* Support - Fiverr style emoji picker */
+.support-emoji-picker .EmojiPickerReact {
+  position: relative !important;
+  overflow: hidden !important;
+  border: 1px solid #e5e7eb !important;
+  border-radius: 12px !important;
+  background: #ffffff !important;
+  box-shadow: 0 12px 30px rgba(15, 23, 42, 0.16) !important;
+}
+
+/* Header must not trap the category navigation */
+.support-emoji-picker .epr-header {
+  position: static !important;
+}
+
+.support-emoji-picker .epr-header-overlay {
+  position: static !important;
+  padding: 10px 10px 4px !important;
+}
+
+/* Search always stays at top */
+.support-emoji-picker .epr-search-container {
+  margin: 0 !important;
+}
+
+/* Emoji sections start directly after search */
+.support-emoji-picker .epr-body {
+  height: calc(100% - 52px) !important;
+  padding-bottom: 42px !important;
+}
+
+/* Category icons fixed at the very bottom */
+.support-emoji-picker .epr-category-nav {
+  position: absolute !important;
+  left: 0 !important;
+  right: 0 !important;
+  bottom: 0 !important;
+  top: auto !important;
+
+  z-index: 50 !important;
+  height: 40px !important;
+
+  display: flex !important;
+  align-items: center !important;
+  justify-content: space-around !important;
+
+  margin: 0 !important;
+  padding: 4px 6px !important;
+
+  border-top: 1px solid #e5e7eb !important;
+  background: #ffffff !important;
+}
+
+/* Clean section headings */
+.support-emoji-picker .epr-emoji-category-label {
+  background: #ffffff !important;
+  color: #555 !important;
+  font-size: 13px !important;
+  font-weight: 600 !important;
+} 
