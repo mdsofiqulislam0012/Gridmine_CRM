@@ -1,6 +1,6 @@
 "use client";
 import Link from "next/link";
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useRef, useMemo, useState } from "react";
 import {
   Menu,
   Search,
@@ -16,15 +16,185 @@ import {
   Palette,
   ShieldCheck,
   CircleHelp,
+  Mail,
+  MailOpen,
 } from "lucide-react";
 import { useAuth } from "@/lib/auth";
+import { createClient } from "@/lib/supabase/client";
 
 export default function AppHeader({ onMenuClick }: { onMenuClick: () => void }) {
   const { user, logout } = useAuth();
+  const supabase = useMemo(() => createClient(), []);
   const [quickOpen, setQuickOpen] = useState(false);
   const [notifOpen, setNotifOpen] = useState(false);
   const [profileOpen, setProfileOpen] = useState(false);
+  const [notifications, setNotifications] = useState<any[]>([]);
+  const [unreadCount, setUnreadCount] = useState(0);
+  const [notificationProfiles, setNotificationProfiles] = useState<
+  Record<string, any>
+>({});
   const profileMenuRef = useRef<HTMLDivElement | null>(null);
+
+  useEffect(() => {
+  const loadNotifications = async () => {
+    const {
+      data: { user: authUser },
+    } = await supabase.auth.getUser();
+
+    if (!authUser) return;
+
+    const { data, error } = await supabase
+      .from("notifications")
+      .select("*")
+      .eq("recipient_id", authUser.id)
+      .order("created_at", { ascending: false })
+      .limit(30);
+      console.log("NOTIFICATION USER:", authUser.id);
+      console.log("NOTIFICATION DATA:", data);
+      console.log("NOTIFICATION ERROR:", error);
+    if (error) {
+      console.error("Error loading notifications:", error);
+      return;
+    }
+
+    const items = data ?? [];
+    const senderIds = [
+  ...new Set(
+    items
+      .map((item) => item.sender_id)
+      .filter(Boolean)
+  ),
+] as string[];
+
+if (senderIds.length > 0) {
+  const { data: profilesData, error: profilesError } = await supabase
+    .from("profiles")
+    .select("id, full_name, email, avatar_url, role")
+    .in("id", senderIds);
+
+  if (profilesError) {
+    console.error("Error loading notification profiles:", profilesError);
+  } else {
+    const profileMap = (profilesData ?? []).reduce(
+      (acc: Record<string, any>, profile: any) => {
+        acc[profile.id] = profile;
+        return acc;
+      },
+      {}
+    );
+
+    setNotificationProfiles(profileMap);
+  }
+}
+
+    setNotifications(items);
+    setUnreadCount(items.filter((item) => !item.is_read).length);
+  };
+
+  loadNotifications();
+}, [supabase]);
+
+useEffect(() => {
+  let channel: ReturnType<typeof supabase.channel> | null = null;
+
+  const subscribeToNotifications = async () => {
+    const {
+      data: { user: authUser },
+    } = await supabase.auth.getUser();
+
+    if (!authUser) return;
+
+    channel = supabase
+      .channel(`notifications-${authUser.id}-${Date.now()}`)
+      .on(
+        "postgres_changes",
+        {
+          event: "INSERT",
+          schema: "public",
+          table: "notifications",
+          filter: `recipient_id=eq.${authUser.id}`,
+        },
+        (payload) => {
+          const newNotification = payload.new as any;
+          if (newNotification.sender_id) {
+          supabase
+            .from("profiles")
+            .select("id, full_name, email, avatar_url, role")
+            .eq("id", newNotification.sender_id)
+            .maybeSingle()
+            .then(({ data: senderProfile, error: senderProfileError }) => {
+              if (senderProfileError) {
+                console.error(
+                  "Error loading realtime notification profile:",
+                  senderProfileError
+                );
+                return;
+              }
+
+              if (senderProfile) {
+                setNotificationProfiles((prev) => ({
+                  ...prev,
+                  [senderProfile.id]: senderProfile,
+                }));
+              }
+            });
+        }
+
+          setNotifications((prev) => [
+            newNotification,
+            ...prev.filter((item) => item.id !== newNotification.id),
+          ]);
+
+          if (!newNotification.is_read) {
+            setUnreadCount((prev) => prev + 1);
+          }
+        }
+      )
+      .on(
+  "postgres_changes",
+  {
+    event: "UPDATE",
+    schema: "public",
+    table: "notifications",
+    filter: `recipient_id=eq.${authUser.id}`,
+  },
+  (payload) => {
+    const updatedNotification = payload.new as any;
+
+    setNotifications((prev) => {
+      const existingNotification = prev.find(
+        (item) => item.id === updatedNotification.id
+      );
+
+      const next = prev.map((item) =>
+        item.id === updatedNotification.id
+          ? updatedNotification
+          : item
+      );
+
+      if (
+        existingNotification &&
+        !existingNotification.is_read &&
+        updatedNotification.is_read
+      ) {
+        setUnreadCount((count) => Math.max(0, count - 1));
+      }
+
+      return next;
+    });
+  }
+)
+      .subscribe();
+  };
+
+  subscribeToNotifications();
+
+  return () => {
+    if (channel) {
+      supabase.removeChannel(channel);
+    }
+  };
+}, [supabase]);
 
   useEffect(() => {
   const handleClickOutside = (event: MouseEvent) => {
@@ -42,6 +212,57 @@ export default function AppHeader({ onMenuClick }: { onMenuClick: () => void }) 
     document.removeEventListener("mousedown", handleClickOutside);
   };
 }, []);
+
+
+  const handleNotificationClick = async (notification: any) => {
+    if (!notification.is_read) {
+      const { error } = await supabase
+        .from("notifications")
+        .update({ is_read: true })
+        .eq("id", notification.id);
+
+      if (!error) {
+        setNotifications((prev) =>
+          prev.map((item) =>
+            item.id === notification.id
+              ? { ...item, is_read: true }
+              : item
+          )
+        );
+      }
+    }
+
+    setNotifOpen(false);
+
+    if (notification.ticket_id) {
+      window.location.href = `/support?ticket=${notification.ticket_id}`;
+    }
+  };
+
+  const formatRelativeTime = (dateString: string) => {
+  const now = Date.now();
+  const created = new Date(dateString).getTime();
+  const diffSeconds = Math.floor((now - created) / 1000);
+
+  if (diffSeconds < 60) return "Just now";
+
+  const diffMinutes = Math.floor(diffSeconds / 60);
+  if (diffMinutes < 60) {
+    return `${diffMinutes} min${diffMinutes === 1 ? "" : "s"} ago`;
+  }
+
+  const diffHours = Math.floor(diffMinutes / 60);
+  if (diffHours < 24) {
+    return `${diffHours} hour${diffHours === 1 ? "" : "s"} ago`;
+  }
+
+  const diffDays = Math.floor(diffHours / 24);
+  if (diffDays < 7) {
+    return `${diffDays} day${diffDays === 1 ? "" : "s"} ago`;
+  }
+
+  return new Date(dateString).toLocaleDateString();
+};
 
   return (
     <header className="sticky top-0 z-20 flex items-center gap-3 border-b border-border-subtle bg-white px-4 py-2.5">
@@ -73,13 +294,102 @@ export default function AppHeader({ onMenuClick }: { onMenuClick: () => void }) 
         <div className="relative">
           <button onClick={() => setNotifOpen((v) => !v)} className="relative rounded-md p-2 text-gray-500 hover:bg-gray-50">
             <Bell size={17} />
-            <span className="absolute -top-0.5 -right-0.5 flex h-4 w-4 items-center justify-center rounded-full bg-brand text-[10px] text-white">7</span>
+            {unreadCount > 0 && (
+          <span className="absolute -top-0.5 -right-0.5 flex h-4 min-w-4 items-center justify-center rounded-full bg-red-500 px-1 text-[10px] font-bold text-white">
+          {unreadCount > 99 ? "99+" : unreadCount}
+          </span>)}
           </button>
           {notifOpen && (
-            <div className="absolute right-0 z-20 mt-1 w-64 rounded-md border border-border-subtle bg-white p-3 shadow-lg">
-              <p className="text-xs text-gray-500">You have 7 unread notifications.</p>
+          <div className="absolute right-0 z-20 mt-1 w-80 overflow-hidden rounded-xl border border-border-subtle bg-white shadow-lg dark:border-slate-700 dark:bg-slate-900">
+            <div className="border-b border-gray-100 px-4 py-3 dark:border-slate-800">
+              <p className="text-sm font-semibold text-gray-900 dark:text-slate-100">
+                Notifications
+              </p>
+
+              <p className="mt-0.5 text-xs text-gray-500 dark:text-slate-400">
+                {unreadCount} unread notification{unreadCount === 1 ? "" : "s"}
+              </p>
             </div>
-          )}
+
+            <div className="max-h-80 overflow-y-auto">
+              {notifications.length === 0? (
+                <div className="px-4 py-6 text-center text-xs text-gray-500 dark:text-slate-400">
+                  No notifications yet
+                </div>
+              ) : (
+                notifications.map((notification) => {
+                const senderProfile =
+                  notificationProfiles[notification.sender_id] ?? null;
+
+                return (
+                  <div
+                    key={notification.id}
+                    onClick={() => handleNotificationClick(notification)}
+                    className={`border-b border-gray-100 px-4 py-3 last:border-b-0 dark:border-slate-800 ${
+                      !notification.is_read
+                      ? "bg-red-50 dark:bg-red-500/10"
+                      : ""
+                    }`}
+                  >
+                    <div className="flex items-start gap-3">
+                      <div className="mt-0.5 shrink-0">
+                      {notification.is_read ? (
+                        <MailOpen size={16} className="text-gray-400" />
+                      ) : (
+                        <Mail size={16} className="text-red-500" />
+                      )}
+                    </div>
+                  <div className="h-10 w-10 shrink-0 overflow-hidden rounded-full bg-gray-200 dark:bg-slate-700">
+                    {senderProfile?.avatar_url ? (
+                      <img
+                        src={senderProfile.avatar_url}
+                        alt={senderProfile.full_name || "User"}
+                        className="h-full w-full object-cover"
+                      />
+                    ) : (
+                      <div className="flex h-full w-full items-center justify-center text-sm font-bold text-gray-700 dark:text-slate-200">
+                        {(senderProfile?.full_name || "U").charAt(0).toUpperCase()}
+                      </div>
+                    )}
+                  </div>
+
+                  <div className="min-w-0 flex-1">
+                    <div className="flex items-center gap-2">
+                      <p className="truncate text-sm font-semibold text-gray-900 dark:text-slate-100">
+                        {senderProfile?.full_name || "User"}
+                      </p>
+
+                      {senderProfile?.role === "admin" && (
+                        <span className="rounded-md bg-purple-500/10 px-1.5 py-0.5 text-[9px] font-bold text-purple-500">
+                          ADMIN
+                        </span>
+                      )}
+
+                      {senderProfile?.role === "support" && (
+                        <span className="rounded-md bg-blue-500/10 px-1.5 py-0.5 text-[9px] font-bold text-blue-500">
+                          SUPPORT
+                        </span>
+                      )}
+                    </div>
+
+                    {notification.message && (
+                      <p className="mt-1 line-clamp-2 text-xs text-gray-600 dark:text-slate-300">
+                        {notification.message}
+                      </p>
+                    )}
+
+                    <p className="mt-1.5 text-[10px] text-gray-400">
+                      {formatRelativeTime(notification.created_at)}
+                    </p>
+                  </div>
+                </div>
+                  </div>
+                );
+              })
+              )}
+            </div>
+          </div>
+        )}
         </div>
         <div ref={profileMenuRef} className="relative">
         <button

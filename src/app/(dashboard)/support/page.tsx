@@ -6,6 +6,7 @@ import NewRecordButton from "@/components/ui/NewRecordButton";
 import { tickets } from "@/data/tickets";
 import { Column, Ticket } from "@/types";
 import { useEffect, useMemo, useRef, useState } from "react";
+import { useSearchParams } from "next/navigation";
 import { createClient } from "@/lib/supabase/client";
 import {
   SendHorizontal,
@@ -18,11 +19,14 @@ import {
   Flag,
   X,
   Smile,
+  Mail,
+  MailOpen,
 } from "lucide-react";
 import EmojiPicker from "emoji-picker-react";
 
-
 export default function SupportPage() {
+  const searchParams = useSearchParams();
+  const notificationTicketId = searchParams.get("ticket");
   const [supportTickets, setSupportTickets] = useState<any[]>([]);
   const [selectedTicket, setSelectedTicket] = useState<any | null>(null);
   const [ticketReplies, setTicketReplies] = useState<any[]>([]);
@@ -35,6 +39,7 @@ export default function SupportPage() {
   const [messageMenuDirection, setMessageMenuDirection] =
   useState<"up" | "down">("down");
   const [ticketProfiles, setTicketProfiles] = useState<Record<string, any>>({});
+  const [replyProfiles, setReplyProfiles] = useState<Record<string, any>>({});
   const inboxUsers = useMemo(() => {
   return [...supportTickets].sort((a, b) => {
     const aTime = new Date(a.lastReply || a.created).getTime();
@@ -43,6 +48,18 @@ export default function SupportPage() {
     return bTime - aTime;
   });
 }, [supportTickets]);
+
+useEffect(() => {
+  if (!notificationTicketId || supportTickets.length === 0) return;
+
+  const ticketFromNotification = supportTickets.find(
+    (ticket) => ticket.id === notificationTicketId
+  );
+
+  if (ticketFromNotification) {
+    setSelectedTicket(ticketFromNotification);
+  }
+}, [notificationTicketId, supportTickets]);
   const [highlightedReplyId, setHighlightedReplyId] =
   useState<string | null>(null);
   const [openMessageMenuId, setOpenMessageMenuId] =
@@ -66,6 +83,18 @@ export default function SupportPage() {
   );
   };
 
+  const getProfileRoleLabel = (profile: any) => {
+  if (!profile?.role) return null;
+
+  if (profile.role === "admin") return "ADMIN";
+  if (profile.role === "support") return "SUPPORT";
+
+  return null;
+};
+
+const isStaffProfile = (profile: any) =>
+  profile?.role === "admin" || profile?.role === "support";
+
   const getProfileAvatar = (profile: any) => {
     return (
       profile?.avatar_url ||
@@ -79,7 +108,12 @@ export default function SupportPage() {
     return myProfile;
   }
 
-  return conversationPartnerProfile;
+  return (
+    ticketProfiles[reply.user_id] ||
+    conversationPartnerProfile ||
+    ticketUserProfile ||
+    null
+  );
 };
   const supabase = useMemo(() => createClient(), []);
 
@@ -109,22 +143,27 @@ export default function SupportPage() {
     "Error loading current profile:",
     currentProfileError
   );
-} else {
+  } else {
   console.log("CURRENT PROFILE:", currentProfile);
   setMyProfile(currentProfile);
-}
+  }
 
-    if (!selectedTicket?.userId) {
-      setTicketUserProfile(null);
-      return;
-    }
+    const partnerUserId =
+  currentProfile?.role === "support" || currentProfile?.role === "admin"
+    ? selectedTicket?.userId
+    : selectedTicket?.assignedTo;
 
-    const { data: ticketProfile, error: ticketProfileError } =
-      await supabase
-        .from("profiles")
-        .select("*")
-        .eq("id", selectedTicket.userId)
-        .maybeSingle();
+  if (!partnerUserId) {
+  setConversationPartnerProfile(null);
+  return;
+  }
+
+  const { data: ticketProfile, error: ticketProfileError } =
+  await supabase
+    .from("profiles")
+    .select("*")
+    .eq("id", partnerUserId)
+    .maybeSingle();
 
     if (ticketProfileError) {
       console.error(
@@ -134,7 +173,7 @@ export default function SupportPage() {
       return;
     }
 
-    setTicketUserProfile(ticketProfile);
+    setConversationPartnerProfile(ticketProfile);
   };
   loadConversationProfiles();
 }, [selectedTicket, supabase]);
@@ -214,11 +253,11 @@ useEffect(() => {
     const userIds = [
       ...new Set(
         supportTickets
-          .map((ticket) => ticket.userId)
+          .flatMap((ticket) => [ticket.userId, ticket.assignedTo])
           .filter(Boolean)
       ),
-    ];
-
+    ] as string[];
+  
     if (userIds.length === 0) {
       setTicketProfiles({});
       return;
@@ -255,6 +294,25 @@ useEffect(() => {
     block: "end",
   });
 }, [selectedTicket, ticketReplies]);
+
+useEffect(() => {
+  if (!selectedTicket?.id || !currentUserId) return;
+
+  const markTicketNotificationsAsRead = async () => {
+    const { error } = await supabase
+      .from("notifications")
+      .update({ is_read: true })
+      .eq("recipient_id", currentUserId)
+      .eq("ticket_id", selectedTicket.id)
+      .eq("is_read", false);
+
+    if (error) {
+      console.error("Error marking ticket notifications as read:", error);
+    }
+  };
+
+  markTicketNotificationsAsRead();
+}, [selectedTicket?.id, currentUserId, ticketReplies.length, supabase]);
 
 useEffect(() => {
   const loadConversationPartner = async () => {
@@ -402,6 +460,79 @@ useEffect(() => {
   loadTicketReplies();
 }, [selectedTicket, supabase]);
 
+useEffect(() => {
+  if (!selectedTicket?.id) return;
+
+  const channel = supabase
+    .channel(`ticket-replies-${selectedTicket.id}-${Date.now()}`)
+    .on(
+      "postgres_changes",
+      {
+        event: "INSERT",
+        schema: "public",
+        table: "support_ticket_replies",
+        filter: `ticket_id=eq.${selectedTicket.id}`,
+      },
+      (payload) => {
+        const newReply = payload.new as any;
+
+        setTicketReplies((prev) => {
+          const alreadyExists = prev.some(
+            (reply) => reply.id === newReply.id
+          );
+
+          if (alreadyExists) return prev;
+
+          return [...prev, newReply];
+        });
+      }
+    )
+    .subscribe();
+
+  return () => {
+    supabase.removeChannel(channel);
+  };
+}, [selectedTicket?.id, supabase]);
+
+useEffect(() => {
+  const loadReplyProfiles = async () => {
+    const userIds = [
+      ...new Set(
+        ticketReplies
+          .map((reply: any) => reply.user_id)
+          .filter(Boolean)
+      ),
+    ];
+
+    if (userIds.length === 0) {
+      setReplyProfiles({});
+      return;
+    }
+
+    const { data, error } = await supabase
+      .from("profiles")
+      .select("*")
+      .in("id", userIds);
+
+    if (error) {
+      console.error("Error loading reply profiles:", error);
+      return;
+    }
+
+    const profilesMap = (data ?? []).reduce(
+      (acc: Record<string, any>, profile: any) => {
+        acc[profile.id] = profile;
+        return acc;
+      },
+      {}
+    );
+
+    setReplyProfiles(profilesMap);
+  };
+
+  loadReplyProfiles();
+}, [ticketReplies, supabase]);
+
   const columns: Column<Ticket>[] = [
   { key: "id", header: "#" },
   {
@@ -460,23 +591,74 @@ useEffect(() => {
 
     if (!user) return;
 
-    const { data, error } = await supabase
-      .from("support_tickets")
-      .select("*")
-      .eq("user_id", user.id)
-      .order("created_at", { ascending: false });
+    let query = supabase
+  .from("support_tickets")
+  .select("*")
+  .order("created_at", { ascending: false });
+
+  if (!isSupportUser) {
+  query = query.eq("user_id", user.id);
+  }
+
+  const { data, error } = await query;
+
+  console.log("SUPPORT TICKET DEBUG:", {
+  isSupportUser,
+  currentUserId: user.id,
+  ticketCount: data?.length,
+  tickets: data?.map((ticket) => ({
+    id: ticket.id,
+    user_id: ticket.user_id,
+    subject: ticket.subject,
+  })),
+});
 
     if (error) {
       console.error("Error loading support tickets:", error);
       return;
     }
+    const ticketIds = (data ?? []).map((ticket) => ticket.id);
 
+    let latestReplies: any[] = [];
+
+    if (ticketIds.length > 0) {
+      const { data: repliesData, error: repliesError } = await supabase
+        .from("support_ticket_replies")
+        .select("ticket_id, user_id, message, created_at")
+        .in("ticket_id", ticketIds)
+        .order("created_at", { ascending: false });
+
+      if (repliesError) {
+        console.error("Error loading latest ticket replies:", repliesError);
+      } else {
+        latestReplies = repliesData ?? [];
+      }
+    }
+
+    const latestReplyMap = latestReplies.reduce(
+  (acc: Record<string, any>, reply: any) => {
+    if (!acc[reply.ticket_id]) {
+      acc[reply.ticket_id] = reply;
+    }
+
+        return acc;
+      },
+      {}
+    );
     const formattedTickets = (data ?? []).map((ticket) => ({
       id: ticket.id,
       userId: ticket.user_id,
       assignedTo: ticket.assigned_to,
       subject: ticket.subject,
       message: ticket.message,
+      lastMessage:
+      latestReplyMap[ticket.id]?.message || ticket.message,
+
+      lastMessageUserId:
+      latestReplyMap[ticket.id]?.user_id || ticket.user_id,
+
+      lastMessageAt:
+      latestReplyMap[ticket.id]?.created_at || ticket.created_at,
       tags: [],
       department: "Support",
       service: "General",
@@ -499,7 +681,7 @@ useEffect(() => {
   };
 
   loadSupportTickets();
-}, [supabase]);
+}, [supabase, isSupportUser]);
   const handleCreateTicket = async () => {
   const cleanSubject = ticketSubject.trim();
   const cleanMessage = ticketMessage.trim();
@@ -1046,7 +1228,11 @@ const handleToggleSavedTicket = async (ticketId: string) => {
     <div className="h-[calc(100%-73px)] overflow-y-auto">
       {inboxUsers.map((item) => {
         const ticket = item;
-        const profile = ticketProfiles[ticket.userId] ?? null;
+        const profile = isSupportUser
+        ? ticketProfiles[ticket.userId] ?? null
+        : ticket.assignedTo
+          ? ticketProfiles[ticket.assignedTo] ?? null
+          : null;
         const isActive = selectedTicket?.id === ticket.id;
 
         return (
@@ -1078,22 +1264,34 @@ const handleToggleSavedTicket = async (ticketId: string) => {
 
             <div className="min-w-0 flex-1">
               <div className="flex items-center justify-between gap-2">
-                <p className="truncate text-sm font-semibold text-gray-900 dark:text-slate-100">
+                <div className="flex items-center gap-2">
+                <span className="truncate text-sm font-semibold text-gray-900 dark:text-slate-100">
                   {getProfileName(profile)}
-                </p>
+                </span>
+
+                {isStaffProfile(profile) && (
+                  <span className="rounded-md border border-blue-500/30 bg-blue-500/10 px-1.5 py-0.5 text-[9px] font-bold tracking-wide text-blue-500">
+                    {getProfileRoleLabel(profile)}
+                  </span>
+                )}
+              </div>
 
                 <span className="shrink-0 text-[11px] text-gray-400">
                   {ticket.lastReply || ticket.created}
                 </span>
               </div>
 
-              <p className="mt-1 truncate text-xs font-medium text-gray-700 dark:text-slate-300">
-                {ticket.subject}
-              </p>
+              <>
+            <span className="font-medium">
+              {ticket.lastMessageUserId === currentUserId
+                ? "Me: "
+                : isSupportUser
+                  ? `${getProfileName(ticketProfiles[ticket.lastMessageUserId])}: `
+                  : "Support: "}
+            </span>
 
-              <p className="mt-1 truncate text-xs text-gray-500 dark:text-slate-400">
-                {ticket.contact}
-              </p>
+            {ticket.lastMessage}
+          </>
             </div>
           </button>
         );
@@ -1138,13 +1336,22 @@ const handleToggleSavedTicket = async (ticketId: string) => {
               </div>
 
               <div>
-                <p className="text-sm font-bold text-gray-900">
-                  {conversationPartnerProfile
-                    ? getProfileName(conversationPartnerProfile)
-                    : selectedTicket.userId === currentUserId
-                    ? "Support"
-                    : getProfileName(ticketUserProfile)}
-                </p>
+                <div className="flex items-center gap-2">
+                  <span className="text-sm font-bold text-gray-900 dark:text-slate-100">
+                    {conversationPartnerProfile
+                      ? getProfileName(conversationPartnerProfile)
+                      : selectedTicket.userId === currentUserId
+                        ? "Support"
+                        : getProfileName(ticketUserProfile)}
+                  </span>
+
+                  {conversationPartnerProfile &&
+                    isStaffProfile(conversationPartnerProfile) && (
+                      <span className="rounded-md border border-blue-500/30 bg-blue-500/10 px-1.5 py-0.5 text-[9px] font-bold tracking-wide text-blue-500">
+                        {getProfileRoleLabel(conversationPartnerProfile)}
+                      </span>
+                    )}
+                </div>
 
                 <p className="text-xs text-gray-500">
                   Support conversation
@@ -1273,9 +1480,17 @@ const handleToggleSavedTicket = async (ticketId: string) => {
                     <div className="min-w-0 flex-1">
                       <div className="mb-1 flex items-center justify-between gap-4">
                         <div className="flex items-center gap-2">
-                          <p className="text-sm font-semibold text-gray-900">
-                            {getProfileName(getReplyProfile(reply))}
-                          </p>
+                          <div className="flex items-center gap-2">
+                            <span className="text-sm font-semibold text-gray-900 dark:text-slate-100">
+                              {getProfileName(getReplyProfile(reply))}
+                            </span>
+
+                            {isStaffProfile(getReplyProfile(reply)) && (
+                              <span className="rounded-md border border-blue-500/30 bg-blue-500/10 px-1.5 py-0.5 text-[9px] font-bold tracking-wide text-blue-500">
+                                {getProfileRoleLabel(getReplyProfile(reply))}
+                              </span>
+                            )}
+                          </div>
 
                           {!reply.deleted_at && reply.edited_at && (
                             <span className="text-xs text-gray-500">
@@ -1541,9 +1756,8 @@ const handleToggleSavedTicket = async (ticketId: string) => {
           <div className="bg-white px-6 py-2">
             <div className="flex w-full items-center gap-2">
 
-              {isSupportUser && (
-                <>
-                <div className="relative">
+              
+                <div ref={emojiPickerRef} className="relative">
                 <button
                   type="button"
                   onClick={() => setShowEmojiPicker((prev) => !prev)}
@@ -1557,20 +1771,23 @@ const handleToggleSavedTicket = async (ticketId: string) => {
                 {showEmojiPicker && (
                 <div className="support-emoji-picker absolute bottom-10 left-0 z-50">
               <EmojiPicker
-              width={350}
-              height={390}
-              searchPlaceHolder="Search"
-              previewConfig={{
-                showPreview: false,
-              }}
-              lazyLoadEmojis={true}
-              onEmojiClick={(emojiData) => {
+                width={300}
+                height={390}
+                searchPlaceHolder="Search"
+                previewConfig={{
+                  showPreview: false,
+                }}
+                lazyLoadEmojis={true}
+                onEmojiClick={(emojiData) => {
                 setReplyMessage((prev) => prev + emojiData.emoji);
+                setShowEmojiPicker(false);
               }}
-            />
+              />
                 </div>
               )}
               </div>
+              {isSupportUser && (
+              <>
               <div className="mx-1 h-5 w-px bg-gray-200" />
                   {/* Status */}
                   <div
