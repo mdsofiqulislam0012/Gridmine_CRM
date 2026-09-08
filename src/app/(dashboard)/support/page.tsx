@@ -28,6 +28,7 @@ export default function SupportPage() {
   const searchParams = useSearchParams();
   const notificationTicketId = searchParams.get("ticket");
   const [supportTickets, setSupportTickets] = useState<any[]>([]);
+  const [ticketsRefreshKey, setTicketsRefreshKey] = useState(0);
   const [selectedTicket, setSelectedTicket] = useState<any | null>(null);
   const [ticketReplies, setTicketReplies] = useState<any[]>([]);
   const [ticketUserProfile, setTicketUserProfile] = useState<any | null>(null);
@@ -60,6 +61,16 @@ useEffect(() => {
     setSelectedTicket(ticketFromNotification);
   }
 }, [notificationTicketId, supportTickets]);
+
+useEffect(() => {
+  if (!selectedTicket?.id) return;
+
+  const timer = window.setTimeout(() => {
+    replyInputRef.current?.focus();
+  }, 100);
+
+  return () => window.clearTimeout(timer);
+}, [selectedTicket?.id]);
   const [highlightedReplyId, setHighlightedReplyId] =
   useState<string | null>(null);
   const [openMessageMenuId, setOpenMessageMenuId] =
@@ -67,12 +78,19 @@ useEffect(() => {
 
   const [replyingTo, setReplyingTo] = useState<any | null>(null);
   const conversationEndRef = useRef<HTMLDivElement | null>(null);
+  const replyInputRef = useRef<HTMLTextAreaElement | null>(null);
   const isSupportUser =
   myProfile?.role === "support" ||
   myProfile?.role === "admin";
   const [currentUserId, setCurrentUserId] = useState<string | null>(null);
   const [conversationPartnerProfile, setConversationPartnerProfile] =
   useState<any | null>(null);
+  const initialTicketProfile = selectedTicket
+  ? ticketProfiles[selectedTicket.userId] ??
+    (selectedTicket.userId === currentUserId ? myProfile : null) ??
+    ticketUserProfile ??
+    null
+  : null;
   const getProfileName = (profile: any) => {
   return (
     profile?.full_name ||
@@ -103,6 +121,24 @@ const isStaffProfile = (profile: any) =>
       null
     );
   };
+
+  const formatToastTime = (dateString: string) => {
+  const diff = Math.floor(
+    (Date.now() - new Date(dateString).getTime()) / 1000
+  );
+
+  if (diff < 60) return "Just now";
+
+  const minutes = Math.floor(diff / 60);
+
+  if (minutes < 60) {
+    return `${minutes} min${minutes === 1 ? "" : "s"} ago`;
+  }
+
+  const hours = Math.floor(minutes / 60);
+
+  return `${hours} hour${hours === 1 ? "" : "s"} ago`;
+};
   const getReplyProfile = (reply: any) => {
   if (reply.user_id === currentUserId) {
     return myProfile;
@@ -575,11 +611,27 @@ useEffect(() => {
     [supportTickets]
   );
 
+  const hasActiveTicket = useMemo(() => {
+  if (isSupportUser) return false;
+
+  return supportTickets.some(
+    (ticket) => ticket.status !== "Closed"
+  );
+}, [isSupportUser, supportTickets]);
+
   const [isNewTicketOpen, setIsNewTicketOpen] = useState(false);
   const [ticketSubject, setTicketSubject] = useState("");
   const [ticketMessage, setTicketMessage] = useState("");
   const [ticketPriority, setTicketPriority] = useState("medium");
   const [success, setSuccess] = useState("");
+  const [liveNotification, setLiveNotification] = useState<{
+  title: string;
+  message: string;
+  ticketId: string | null;
+  senderName: string;
+  senderAvatar: string | null;
+  createdAt: string;
+  } | null>(null);
   const [replyMessage, setReplyMessage] = useState("");
   const [editingReplyId, setEditingReplyId] = useState<string | null>(null);
   const [editingReplyMessage, setEditingReplyMessage] = useState("");
@@ -681,8 +733,101 @@ useEffect(() => {
   };
 
   loadSupportTickets();
-}, [supabase, isSupportUser]);
+}, [supabase, isSupportUser, ticketsRefreshKey]);
+
+ useEffect(() => {
+  if (!currentUserId || !isSupportUser) return;
+
+  const channel = supabase
+    .channel(
+      `support-new-ticket-notifications-${currentUserId}-${Date.now()}`
+    )
+    .on(
+      "postgres_changes",
+      {
+        event: "INSERT",
+        schema: "public",
+        table: "notifications",
+        filter: `recipient_id=eq.${currentUserId}`,
+      },
+      async (payload) => {
+        const notification = payload.new as any;
+
+        // New support ticket
+        if (notification.type === "new_ticket") {
+        setTicketsRefreshKey((prev) => prev + 1);
+
+        const { data: senderProfile } = await supabase
+          .from("profiles")
+          .select("full_name, email, avatar_url")
+          .eq("id", notification.sender_id)
+          .maybeSingle();
+
+        const senderName =
+          senderProfile?.full_name ||
+          senderProfile?.email ||
+          "User";
+
+        setLiveNotification({
+          title: "New support ticket",
+          message:
+            notification.message ||
+            "A user created a new support ticket.",
+          ticketId: notification.ticket_id || null,
+          senderName,
+          senderAvatar: senderProfile?.avatar_url || null,
+          createdAt: notification.created_at || new Date().toISOString(),
+        });
+
+        window.setTimeout(() => {
+          setLiveNotification(null);
+        }, 5000);
+      }
+
+        // New message from a user
+        if (notification.type === "ticket_reply") {
+          const { data: senderProfile } = await supabase
+            .from("profiles")
+            .select("full_name, email, avatar_url")
+            .eq("id", notification.sender_id)
+            .maybeSingle();
+
+          const senderName =
+            senderProfile?.full_name ||
+            senderProfile?.email ||
+            "User";
+
+          // Current open conversation-এর message হলে bottom popup লাগবে না
+         setLiveNotification({
+          title: "You have a new message",
+          message: `${senderName}: ${notification.message || ""}`,
+          ticketId: notification.ticket_id || null,
+          senderName,
+          senderAvatar: senderProfile?.avatar_url || null,
+          createdAt: notification.created_at || new Date().toISOString(),
+        });
+        }
+      }
+    )
+    .subscribe();
+
+  return () => {
+    supabase.removeChannel(channel);
+  };
+}, [
+  currentUserId,
+  isSupportUser,
+  selectedTicket?.id,
+  supabase,
+]);
+
   const handleCreateTicket = async () => {
+    if (hasActiveTicket) {
+  setSuccess(
+    "You already have an active support ticket. Please wait until it is closed."
+  );
+  return;
+}
   const cleanSubject = ticketSubject.trim();
   const cleanMessage = ticketMessage.trim();
 
@@ -1108,21 +1253,41 @@ const handleToggleSavedTicket = async (ticketId: string) => {
         title="Support"
         actions={
           <button
-            type="button"
-            onClick={() => setIsNewTicketOpen(true)}
-            className="rounded-lg bg-blue-600 px-4 py-2 text-sm font-semibold text-white transition hover:bg-blue-700"
-          >
-            + New Ticket
-          </button>
+          type="button"
+          disabled={hasActiveTicket}
+          onClick={() => {
+            if (hasActiveTicket) return;
+            setIsNewTicketOpen(true);
+          }}
+          className={`rounded-lg px-4 py-2 text-sm font-semibold text-white transition ${
+            hasActiveTicket
+              ? "cursor-not-allowed bg-gray-400 opacity-60"
+              : "bg-blue-600 hover:bg-blue-700"
+          }`}
+          title={
+            hasActiveTicket
+              ? "You already have an active support ticket. Please wait until it is closed."
+              : "Create a new support ticket"
+          }
+        >
+          + New Ticket
+        </button>
         }
       />
-      <div className="mb-4 flex flex-wrap gap-2">
-        {(Object.entries(counts) as [string, number][]).map(([label, count]) => (
-          <span key={label} className="rounded-md border border-border-subtle bg-white px-3 py-1.5 text-[13px]">
-            {count} <StatusBadge label={label} />
-          </span>
-        ))}
-      </div>
+      {isSupportUser && (
+  <div className="mb-4 flex flex-wrap gap-2">
+    {(Object.entries(counts) as [string, number][]).map(
+      ([label, count]) => (
+        <span
+          key={label}
+          className="rounded-md border border-border-subtle bg-white px-3 py-1.5 text-[13px]"
+        >
+          {count} <StatusBadge label={label} />
+        </span>
+      )
+    )}
+    </div>
+   )}
       {isNewTicketOpen && (
   <div className="fixed inset-0 z-[100] flex items-center justify-center bg-black/50 p-4">
     <div className="max-h-[90vh] w-[92vw] max-w-5xl overflow-y-auto rounded-2xl border border-gray-200 bg-white p-7 shadow-2xl">
@@ -1215,17 +1380,24 @@ const handleToggleSavedTicket = async (ticketId: string) => {
 
   {/* LEFT — Support users */}
   <div className="w-[330px] shrink-0 border-r border-gray-200">
-    <div className="border-b border-gray-200 px-5 py-4">
-      <h3 className="text-sm font-bold text-gray-900">
-        All conversations
-      </h3>
+    {isSupportUser && (
+  <div className="border-b border-gray-200 px-5 py-4">
+    <h3 className="text-sm font-bold text-gray-900 dark:text-slate-100">
+      All conversations
+    </h3>
 
-      <p className="mt-1 text-xs text-gray-500">
-        {inboxUsers.length} conversations
-      </p>
+    <p className="mt-1 text-xs text-gray-500 dark:text-slate-400">
+      {inboxUsers.length} conversations
+    </p>
     </div>
+    )}
 
-    <div className="h-[calc(100%-73px)] overflow-y-auto">
+    <div className={
+    isSupportUser
+      ? "h-[calc(100%-73px)] overflow-y-auto"
+      : "h-full overflow-y-auto"
+      }
+    >
       {inboxUsers.map((item) => {
         const ticket = item;
         const profile = isSupportUser
@@ -1242,9 +1414,14 @@ const handleToggleSavedTicket = async (ticketId: string) => {
             onClick={() => setSelectedTicket(ticket)}
             className={`flex w-full items-start gap-3 border-b border-gray-100 px-4 py-4 text-left transition dark:border-slate-800 ${
             isActive
-              ? "bg-blue-50 dark:bg-slate-800"
-              : "hover:bg-gray-50 dark:hover:bg-slate-800/70"
+            ? ""
+            : "hover:bg-gray-50 dark:hover:bg-slate-800/60"
           }`}
+          style={
+          isActive
+            ? { backgroundColor: "#eef4ff" }
+            : undefined
+        }
           >
             <div className="h-11 w-11 shrink-0 overflow-hidden rounded-full bg-gray-200">
               {getProfileAvatar(profile) ? (
@@ -1262,37 +1439,50 @@ const handleToggleSavedTicket = async (ticketId: string) => {
               )}
             </div>
 
-            <div className="min-w-0 flex-1">
-              <div className="flex items-center justify-between gap-2">
-                <div className="flex items-center gap-2">
-                <span className="truncate text-sm font-semibold text-gray-900 dark:text-slate-100">
-                  {getProfileName(profile)}
+           <div className="min-w-0 flex-1">
+          <div className="flex items-center justify-between gap-2">
+            <div className="flex min-w-0 items-center gap-2">
+              <span
+                className="truncate text-sm font-semibold"
+                style={{
+                  color: isActive ? "#111827" : "#111827",
+                }}
+              >
+                {getProfileName(profile)}
+              </span>
+
+              {isStaffProfile(profile) && (
+                <span className="shrink-0 rounded-md border border-blue-500/30 bg-blue-500/10 px-1.5 py-0.5 text-[9px] font-bold tracking-wide text-blue-500">
+                  {getProfileRoleLabel(profile)}
                 </span>
+              )}
+            </div>
 
-                {isStaffProfile(profile) && (
-                  <span className="rounded-md border border-blue-500/30 bg-blue-500/10 px-1.5 py-0.5 text-[9px] font-bold tracking-wide text-blue-500">
-                    {getProfileRoleLabel(profile)}
-                  </span>
-                )}
-              </div>
+            <span className="shrink-0 text-[11px] text-gray-400">
+              {ticket.lastReply || ticket.created}
+            </span>
+          </div>
 
-                <span className="shrink-0 text-[11px] text-gray-400">
-                  {ticket.lastReply || ticket.created}
-                </span>
-              </div>
-
-              <>
-            <span className="font-medium">
+          <p
+            className="mt-1 truncate text-xs"
+            style={{
+              color: isActive ? "#1f2937" : "#6b7280",
+              fontWeight: isActive ? 600 : 400,
+            }}
+          >
+            <span style={{ fontWeight: isActive ? 600 : 500 }}>
               {ticket.lastMessageUserId === currentUserId
                 ? "Me: "
                 : isSupportUser
-                  ? `${getProfileName(ticketProfiles[ticket.lastMessageUserId])}: `
+                  ? `${getProfileName(
+                      ticketProfiles[ticket.lastMessageUserId]
+                    )}: `
                   : "Support: "}
             </span>
 
             {ticket.lastMessage}
-          </>
-            </div>
+          </p>
+        </div>
           </button>
         );
         })}
@@ -1376,25 +1566,24 @@ const handleToggleSavedTicket = async (ticketId: string) => {
                 <div
                   id={`ticket-${selectedTicket.id}`} className="flex items-start gap-3 scroll-mt-24 rounded-xl transition-all duration-300">
                   <div className="h-10 w-10 shrink-0 overflow-hidden rounded-full bg-gray-200">
-                    {getProfileAvatar(ticketUserProfile) ? (
-                      <img
-                        src={getProfileAvatar(ticketUserProfile)}
-                        alt={getProfileName(ticketUserProfile)}
-                        className="h-full w-full object-cover"
-                      />
-                    ) : (
-                      <div className="flex h-full w-full items-center justify-center text-sm font-bold text-gray-700">
-                        {getProfileName(ticketUserProfile).charAt(0).toUpperCase()}
-                      </div>
-                    )}
-                  </div>
+                    {getProfileAvatar(initialTicketProfile) ? (
+                    <img
+                      src={getProfileAvatar(initialTicketProfile)}
+                      alt={getProfileName(initialTicketProfile)}
+                      className="h-full w-full object-cover"
+                    />
+                  ) : (
+                    <div className="flex h-full w-full items-center justify-center text-sm font-bold text-gray-700">
+                  {getProfileName(initialTicketProfile).charAt(0).toUpperCase()}
+              </div>
+            )}
+          </div>
 
-                  <div className="min-w-0 flex-1">
-                    <div className="mb-1 flex items-center justify-between gap-4">
-  <p className="text-sm font-semibold text-gray-900">
-    {getProfileName(ticketUserProfile)}
-  </p>
-
+      <div className="min-w-0 flex-1">
+  <div className="mb-1 flex items-center justify-between gap-4">
+    <p className="text-sm font-semibold text-gray-900 dark:text-slate-100">
+      {getProfileName(initialTicketProfile)}
+    </p>
   <div
   data-message-menu
   className="relative flex items-center gap-2">
@@ -1510,12 +1699,11 @@ const handleToggleSavedTicket = async (ticketId: string) => {
                   onClick={(e) => {
                     const rect = e.currentTarget.getBoundingClientRect();
 
-                    const conversationArea = e.currentTarget.closest(
-                      "[data-conversation-scroll]"
+                    const scrollContainer = e.currentTarget.closest(
+                      ".overflow-y-auto"
                     ) as HTMLElement | null;
 
-                    const containerRect =
-                      conversationArea?.getBoundingClientRect();
+                    const containerRect = scrollContainer?.getBoundingClientRect();
 
                     const spaceBelow = containerRect
                       ? containerRect.bottom - rect.bottom
@@ -1739,8 +1927,18 @@ const handleToggleSavedTicket = async (ticketId: string) => {
             )}
           <textarea className="h-11 w-full resize-none rounded-xl border border-gray-300 px-4 py-[11px] pr-14 text-sm leading-5 outline-none focus:border-blue-500 disabled:cursor-not-allowed disabled:bg-gray-100 disabled:opacity-60"
             value={replyMessage}
+            ref={replyInputRef}
               disabled={selectedTicket.status === "Closed"}
                 onChange={(e) => setReplyMessage(e.target.value)}
+                onKeyDown={(e) => {
+                  if (e.key === "Enter" && !e.shiftKey) {
+                    e.preventDefault();
+
+                    if (replyMessage.trim()) {
+                      handleSubmitReply();
+                    }
+                  }
+                }}
                   rows={1}
                     placeholder={
                       selectedTicket.status === "Closed"
@@ -1888,6 +2086,75 @@ const handleToggleSavedTicket = async (ticketId: string) => {
           <div className="toast-progress h-[3px] w-full bg-green-500" />
         </div>
       )}
+      {liveNotification && (
+  <div
+    className="toast-card-motion fixed bottom-6 right-6 z-[120] w-[320px] overflow-hidden rounded-2xl border border-gray-200 bg-white shadow-[0_18px_45px_rgba(15,23,42,0.16)] dark:border-slate-700 dark:bg-slate-900"
+  >
+    <div className="flex items-start gap-3 px-4 py-3">
+      <div className="h-10 w-10 shrink-0 overflow-hidden rounded-full bg-gray-200 dark:bg-slate-700">
+      {liveNotification.senderAvatar ? (
+        <img
+          src={liveNotification.senderAvatar}
+          alt={liveNotification.senderName}
+          className="h-full w-full object-cover"
+        />
+      ) : (
+        <div className="flex h-full w-full items-center justify-center text-sm font-bold text-gray-600 dark:text-slate-200">
+          {liveNotification.senderName.charAt(0).toUpperCase()}
+        </div>
+      )}
+    </div>
+
+      <div className="min-w-0 flex-1">
+        <div className="flex items-start justify-between gap-3">
+          <div>
+          <div className="flex items-center gap-2">
+          <p className="text-xs font-semibold text-gray-900 dark:text-slate-100">
+            {liveNotification.senderName}
+          </p>
+
+          <span className="text-[10px] text-gray-400 dark:text-slate-500">
+            {formatToastTime(liveNotification.createdAt)}
+          </span>
+        </div>
+
+          <p className="mt-0.5 text-sm font-semibold text-gray-900 dark:text-slate-100">
+            {liveNotification.title}
+          </p>
+        </div>
+
+          <button
+            type="button"
+            onClick={() => setLiveNotification(null)}
+            className="shrink-0 text-lg leading-none text-gray-400 transition hover:text-gray-700 dark:hover:text-slate-200"
+            aria-label="Close notification"
+          >
+            ×
+          </button>
+        </div>
+
+        <p className="mt-1 line-clamp-2 text-xs leading-5 text-gray-600 dark:text-slate-300">
+          {liveNotification.message}
+        </p>
+
+        {liveNotification.ticketId && (
+          <button
+            type="button"
+            onClick={() => {
+              window.location.href = `/support?ticket=${liveNotification.ticketId}`;
+              setLiveNotification(null);
+            }}
+            className="mt-2 text-xs font-semibold text-blue-600 transition hover:text-blue-700 hover:underline dark:text-blue-400"
+          >
+            Open conversation
+          </button>
+        )}
+      </div>
+    </div>
+
+    <div className="toast-progress h-[3px] w-full bg-blue-500" />
+  </div>
+)}
     </div>
   );
 }

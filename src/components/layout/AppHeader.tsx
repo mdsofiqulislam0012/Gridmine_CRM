@@ -34,6 +34,7 @@ export default function AppHeader({ onMenuClick }: { onMenuClick: () => void }) 
   Record<string, any>
 >({});
   const profileMenuRef = useRef<HTMLDivElement | null>(null);
+  const notifMenuRef = useRef<HTMLDivElement | null>(null);
 
   useEffect(() => {
   const loadNotifications = async () => {
@@ -204,6 +205,12 @@ useEffect(() => {
     ) {
       setProfileOpen(false);
     }
+    if (
+      notifMenuRef.current &&
+      !notifMenuRef.current.contains(event.target as Node)
+    ) {
+      setNotifOpen(false);
+    }
   };
 
   document.addEventListener("mousedown", handleClickOutside);
@@ -291,7 +298,7 @@ useEffect(() => {
         <button className="rounded-md p-2 text-gray-500 hover:bg-gray-50"><Share2 size={17} /></button>
         <button className="rounded-md p-2 text-gray-500 hover:bg-gray-50"><ListChecks size={17} /></button>
         <button className="rounded-md p-2 text-gray-500 hover:bg-gray-50"><Clock size={17} /></button>
-        <div className="relative">
+        <div ref={notifMenuRef} className="relative">
           <button onClick={() => setNotifOpen((v) => !v)} className="relative rounded-md p-2 text-gray-500 hover:bg-gray-50">
             <Bell size={17} />
             {unreadCount > 0 && (
@@ -331,15 +338,8 @@ useEffect(() => {
                       : ""
                     }`}
                   >
-                    <div className="flex items-start gap-3">
-                      <div className="mt-0.5 shrink-0">
-                      {notification.is_read ? (
-                        <MailOpen size={16} className="text-gray-400" />
-                      ) : (
-                        <Mail size={16} className="text-red-500" />
-                      )}
-                    </div>
-                  <div className="h-10 w-10 shrink-0 overflow-hidden rounded-full bg-gray-200 dark:bg-slate-700">
+                    <div className="flex items-start gap-4">
+                    <div className="h-10 w-10 shrink-0 overflow-hidden rounded-full bg-gray-200 dark:bg-slate-700">
                     {senderProfile?.avatar_url ? (
                       <img
                         src={senderProfile.avatar_url}
@@ -370,6 +370,13 @@ useEffect(() => {
                           SUPPORT
                         </span>
                       )}
+                      <div className="mt-1 shrink-0 pl-25">
+                      {notification.is_read ? (
+                        <MailOpen size={16} className="text-gray-400" />
+                      ) : (
+                        <Mail size={16} className="text-red-500" />
+                      )}
+                    </div>
                     </div>
 
                     {notification.message && (
