@@ -1382,11 +1382,17 @@ const handleToggleSavedTicket = async (ticketId: string) => {
   <div className="w-[330px] shrink-0 border-r border-gray-200">
     {isSupportUser && (
   <div className="border-b border-gray-200 px-5 py-4">
-    <h3 className="text-sm font-bold text-gray-900 dark:text-slate-100">
-      All conversations
-    </h3>
+    <h3
+  className="text-sm font-bold"
+  style={{ color: "#0f172a" }}
+>
+  All conversations
+</h3>
 
-    <p className="mt-1 text-xs text-gray-500 dark:text-slate-400">
+    <p
+  className="mt-1 text-xs"
+  style={{ color: "#64748b" }}
+>
       {inboxUsers.length} conversations
     </p>
     </div>
@@ -1507,7 +1513,10 @@ const handleToggleSavedTicket = async (ticketId: string) => {
           <div className="flex h-full min-h-0 flex-col overflow-hidden">
 
             {/* Conversation partner header */}
-          <div className="flex shrink-0 items-center justify-between border-b border-gray-200 bg-white px-8 py-4">
+          <div
+  className="flex shrink-0 items-center justify-between border-b border-gray-200 bg-white px-8 py-4"
+  style={{ opacity: 1 }}
+>
             <div className="flex items-center gap-3">
               <div className="h-11 w-11 overflow-hidden rounded-full bg-gray-200">
                 {getProfileAvatar(conversationPartnerProfile) ? (
@@ -1527,13 +1536,19 @@ const handleToggleSavedTicket = async (ticketId: string) => {
 
               <div>
                 <div className="flex items-center gap-2">
-                  <span className="text-sm font-bold text-gray-900 dark:text-slate-100">
-                    {conversationPartnerProfile
-                      ? getProfileName(conversationPartnerProfile)
-                      : selectedTicket.userId === currentUserId
-                        ? "Support"
-                        : getProfileName(ticketUserProfile)}
-                  </span>
+                  <span
+  className="text-sm font-bold"
+  style={{
+    color: "#0f172a",
+    opacity: 1,
+  }}
+>
+  {conversationPartnerProfile
+    ? getProfileName(conversationPartnerProfile)
+    : selectedTicket.userId === currentUserId
+      ? "Support"
+      : getProfileName(ticketUserProfile)}
+</span>
 
                   {conversationPartnerProfile &&
                     isStaffProfile(conversationPartnerProfile) && (
@@ -1581,9 +1596,12 @@ const handleToggleSavedTicket = async (ticketId: string) => {
 
       <div className="min-w-0 flex-1">
   <div className="mb-1 flex items-center justify-between gap-4">
-    <p className="text-sm font-semibold text-gray-900 dark:text-slate-100">
-      {getProfileName(initialTicketProfile)}
-    </p>
+    <p
+  className="text-sm font-bold"
+  style={{ color: "#0f172a" }}
+>
+  {getProfileName(initialTicketProfile)}
+</p>
   <div
   data-message-menu
   className="relative flex items-center gap-2">
@@ -1670,7 +1688,10 @@ const handleToggleSavedTicket = async (ticketId: string) => {
                       <div className="mb-1 flex items-center justify-between gap-4">
                         <div className="flex items-center gap-2">
                           <div className="flex items-center gap-2">
-                            <span className="text-sm font-semibold text-gray-900 dark:text-slate-100">
+                            <span
+                              className="text-sm font-bold"
+                              style={{ color: "#0f172a" }}
+                            >
                               {getProfileName(getReplyProfile(reply))}
                             </span>
 
