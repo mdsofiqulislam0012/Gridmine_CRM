@@ -116,7 +116,9 @@ useEffect(() => {
 const [recentData, setRecentData] = useState({
   customers: [] as any[],
   projects: [] as any[],
+  myProjects: [] as any[],
   tasks: [] as any[],
+  myTasks: [] as any[],
   tickets: [] as any[],
 });
 
@@ -176,7 +178,24 @@ useEffect(() => {
 setRecentData({
   customers: sortNewest(customers).slice(0, 5),
   projects: sortNewest(projects).slice(0, 5),
+  myProjects: sortNewest(
+  projects.filter(
+    (project: any) =>
+      project.assigned_to === user?.id ||
+      project.assignedTo === user?.id
+  )
+).slice(0, 5),
+
   tasks: sortNewest(tasks).slice(0, 5),
+
+  myTasks: sortNewest(
+    tasks.filter(
+      (task: any) =>
+        task.assigned_to === user?.id ||
+        task.assignedTo === user?.id
+    )
+  ).slice(0, 5),
+
   tickets: sortNewest(tickets).slice(0, 5),
 });
 
@@ -699,22 +718,12 @@ const supportOverview = [
         label: "My Tasks",
                 content: (
                   <div className="space-y-3">
-                    {recentData.tasks.filter(
-                    (task: any) =>
-                      task.assigned_to === currentUserId ||
-                      task.assignedTo === currentUserId
-                  ).length === 0 ? (
+                    {recentData.myTasks.length === 0 ? (
                       <p className="text-[13px] text-gray-400">
                         No tasks found
                       </p>
                     ) : (
-                      recentData.tasks
-                      .filter(
-                        (task: any) =>
-                          task.assigned_to === currentUserId ||
-                          task.assignedTo === currentUserId
-                      )
-                      .map((task: any) => (
+                      recentData.myTasks.map((task: any) => (
                         <div
                           key={task.id}
                           className="flex items-center justify-between gap-4 border-b border-gray-100 pb-2 last:border-b-0"
@@ -759,12 +768,12 @@ const supportOverview = [
         label: "My Projects",
                 content: (
                   <div className="space-y-3">
-                    {recentData.projects.length === 0 ? (
+                    {recentData.myProjects.length === 0 ? (
                       <p className="text-[13px] text-gray-400">
                         No projects found
                       </p>
                     ) : (
-                      recentData.projects.map((project: any) => (
+                      recentData.myProjects.map((project: any) => (
                         <div
                           key={project.id}
                           className="flex items-center justify-between gap-4 border-b border-gray-100 pb-2 last:border-b-0"

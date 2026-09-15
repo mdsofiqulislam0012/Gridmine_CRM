@@ -20,6 +20,7 @@ export default function NewProjectPage() {
   const supabase = useMemo(() => createClient(), []);
 
   const [saving, setSaving] = useState(false);
+  const [projectUsers, setProjectUsers] = useState<any[]>([]);
   const [error, setError] = useState("");
   const [success, setSuccess] = useState("");
   const [activeTab, setActiveTab] = useState<"project" | "settings">("project");
@@ -38,6 +39,7 @@ export default function NewProjectPage() {
     estimated_hours: "",
 
     members: "",
+    assigned_to: "",
     start_date: "",
     due_date: "",
     tags: "",
@@ -63,6 +65,24 @@ export default function NewProjectPage() {
 
     send_project_created_email: false,
   });
+
+  useEffect(() => {
+  const loadProjectUsers = async () => {
+    const { data, error } = await supabase
+      .from("profiles")
+      .select("id, full_name, email, avatar_url, role")
+      .order("full_name", { ascending: true });
+
+    if (error) {
+      console.error("Project users error:", error);
+      return;
+    }
+
+    setProjectUsers(data ?? []);
+  };
+
+  loadProjectUsers();
+}, [supabase]);
 
   useEffect(() => {
   if (!editProjectId) return;
@@ -116,6 +136,7 @@ export default function NewProjectPage() {
       tags: Array.isArray(data.tags)
         ? data.tags.join(", ")
         : data.tags ?? "",
+        assigned_to: data.assigned_to ?? "",
 
       order_page_url: data.order_page_url ?? "",
       conversation_page_url: data.conversation_page_url ?? "",
@@ -268,11 +289,13 @@ export default function NewProjectPage() {
         ),
 
         description:
-          form.description.trim() || null,
+        form.description.trim() || null,
 
-        send_project_created_email:
-          form.send_project_created_email,
-      };
+      assigned_to: form.assigned_to || null,
+
+      send_project_created_email:
+        form.send_project_created_email,
+        };
     const { error: saveError } = isEditMode
       ? await supabase
           .from("projects")
@@ -595,6 +618,30 @@ setTimeout(() => {
               />
             </label>
           </div>
+          <label className="block">
+        <span className="mb-1.5 block text-xs font-semibold text-gray-700">
+          Assigned To
+        </span>
+
+        <select
+          value={form.assigned_to}
+          onChange={(e) =>
+            setForm((prev) => ({
+              ...prev,
+              assigned_to: e.target.value,
+            }))
+          }
+          className="w-full rounded-lg border border-gray-200 bg-white px-3 py-2.5 text-sm text-gray-900 outline-none transition focus:border-brand focus:ring-2 focus:ring-brand/10"
+        >
+          <option value="">Unassigned</option>
+
+          {projectUsers.map((profile: any) => (
+            <option key={profile.id} value={profile.id}>
+              {profile.full_name || profile.email || "User"}
+            </option>
+          ))}
+        </select>
+      </label>
 
           {/* Dates */}
           <div className="grid gap-5 md:grid-cols-2">

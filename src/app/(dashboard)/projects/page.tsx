@@ -23,6 +23,7 @@ type ProjectStatus =
 
 type ProjectRow = {
   id: string;
+  project_code: string | null;
   name: string;
   client_name: string | null;
   status: ProjectStatus;
@@ -30,6 +31,7 @@ type ProjectRow = {
   start_date: string | null;
   due_date: string | null;
   budget: number | null;
+  assigned_to: string | null;
   created_at: string;
 };
 
@@ -67,6 +69,7 @@ export default function ProjectsPage() {
     const [editingProject, setEditingProject] = useState<ProjectRow | null>(null);
     const [editProjectOpen, setEditProjectOpen] = useState(false);
     const [savingEdit, setSavingEdit] = useState(false);
+    const [projectUsers, setProjectUsers] = useState<any[]>([]);
 
   const [loading, setLoading] = useState(true);
 
@@ -79,6 +82,19 @@ export default function ProjectsPage() {
   /* ----------------------------
      LOAD PROJECTS
   ----------------------------- */
+  const loadProjectUsers = async () => {
+  const { data, error } = await supabase
+    .from("profiles")
+    .select("id, full_name, email, avatar_url, role")
+    .order("full_name", { ascending: true });
+
+  if (error) {
+    console.error("Project users error:", error);
+    return;
+  }
+
+  setProjectUsers(data ?? []);
+};
 
   const loadProjects = async () => {
     setLoading(true);
@@ -88,6 +104,7 @@ export default function ProjectsPage() {
       .select(
         `
         id,
+        project_code,
         name,
         client_name,
         status,
@@ -95,6 +112,7 @@ export default function ProjectsPage() {
         start_date,
         due_date,
         budget,
+        assigned_to,
         created_at
         `
       )
@@ -127,6 +145,7 @@ export default function ProjectsPage() {
         },
         () => {
           loadProjects();
+          loadProjectUsers();
         }
       )
       .subscribe();
@@ -212,21 +231,54 @@ export default function ProjectsPage() {
       )
     );
   };
+const handleSaveEdit = async () => {
+  if (!editingProject) return;
 
+  setSavingEdit(true);
+  setError("");
+
+  const { error } = await supabase
+    .from("projects")
+    .update({
+      name: editingProject.name,
+      client_name: editingProject.client_name,
+      status: editingProject.status,
+      description: editingProject.description,
+      start_date: editingProject.start_date,
+      due_date: editingProject.due_date,
+      budget: editingProject.budget,
+      assigned_to: editingProject.assigned_to || null,
+      updated_at: new Date().toISOString(),
+    })
+    .eq("id", editingProject.id);
+
+  if (error) {
+    console.error("Error updating project:", error);
+    setError(error.message);
+    setSavingEdit(false);
+    return;
+  }
+
+  await loadProjects();
+
+  setEditingProject(null);
+  setEditProjectOpen(false);
+  setSavingEdit(false);
+};
   /* ----------------------------
      TABLE COLUMNS
   ----------------------------- */
 
-  const columns: Column<ProjectRow>[] = [
-    {
-      key: "id",
-      header: "#",
-      render: (project) => (
-        <span className="text-xs text-gray-400">
-          {project.id.slice(0, 8)}
-        </span>
-      ),
-    },
+  const columns: Column<ProjectRow>[] = [ 
+     {
+  key: "project_code",
+  header: "Project ID",
+  render: (project) => (
+    <span className="text-xs font-semibold text-blue-600">
+      {project.project_code || "—"}
+    </span>
+  ),
+},
 
     {
       key: "name",
@@ -421,9 +473,52 @@ export default function ProjectsPage() {
       className="w-full rounded-lg border border-gray-200 bg-white px-3 py-2.5 text-sm text-gray-900 outline-none transition focus:border-brand focus:ring-2 focus:ring-brand/10"
     />
   </label>
+<label className="block">
+  <span className="mb-1.5 block text-xs font-semibold text-gray-700">
+    Assigned To
+  </span>
 
+  <select
+    value={editingProject.assigned_to ?? ""}
+    onChange={(e) =>
+      setEditingProject({
+        ...editingProject,
+        assigned_to: e.target.value || null,
+      })
+    }
+    className="w-full rounded-lg border border-gray-200 bg-white px-3 py-2.5 text-sm text-gray-900 outline-none transition focus:border-brand focus:ring-2 focus:ring-brand/10"
+  >
+    <option value="">Unassigned</option>
+
+    {projectUsers.map((profile: any) => (
+      <option key={profile.id} value={profile.id}>
+        {profile.full_name || profile.email || "User"}
+      </option>
+    ))}
+  </select>
+</label>
 </div>
+<div className="flex items-center justify-end gap-2 border-t border-gray-100 px-5 py-4">
+  <button
+    type="button"
+    onClick={() => {
+      setEditProjectOpen(false);
+      setEditingProject(null);
+    }}
+    className="rounded-lg border border-gray-200 px-4 py-2 text-sm font-medium text-gray-600 hover:bg-gray-50"
+  >
+    Cancel
+  </button>
 
+  <button
+    type="button"
+    onClick={handleSaveEdit}
+    disabled={savingEdit}
+    className="rounded-lg bg-blue-600 px-4 py-2 text-sm font-semibold text-white hover:bg-blue-700 disabled:cursor-not-allowed disabled:opacity-50"
+  >
+    {savingEdit ? "Saving..." : "Save Changes"}
+  </button>
+</div>
         </div>
       </div>
     )}
@@ -481,9 +576,10 @@ export default function ProjectsPage() {
           columns={columns}
           rows={rows}
           searchKeys={[
-            "name",
-            "client_name",
-          ]}
+          "project_code",
+          "name",
+          "client_name",
+        ]}
         />
       )}
     </div>
