@@ -273,11 +273,18 @@ const handleSaveEdit = async () => {
      {
   key: "project_code",
   header: "Project ID",
-  render: (project) => (
-    <span className="text-xs font-semibold text-blue-600">
-      {project.project_code || "—"}
-    </span>
-  ),
+ render: (project) => (
+  project.project_code ? (
+    <Link
+      href={`/projects/${project.project_code}`}
+      className="text-xs font-semibold text-blue-600 hover:underline"
+    >
+      {project.project_code}
+    </Link>
+  ) : (
+    <span className="text-xs text-gray-400">—</span>
+  )
+),
 },
 
     {

@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
 import { createClient } from "@/lib/supabase/client";
 import { useSearchParams } from "next/navigation";
@@ -21,6 +21,26 @@ export default function NewProjectPage() {
 
   const [saving, setSaving] = useState(false);
   const [projectUsers, setProjectUsers] = useState<any[]>([]);
+  const [selectedMemberIds, setSelectedMemberIds] = useState<string[]>([]);
+  const [membersOpen, setMembersOpen] = useState(false);
+  const [memberSearch, setMemberSearch] = useState("");
+  const membersDropdownRef = useRef<HTMLDivElement | null>(null);
+  useEffect(() => {
+  const handleClickOutside = (event: MouseEvent) => {
+    if (
+      membersDropdownRef.current &&
+      !membersDropdownRef.current.contains(event.target as Node)
+    ) {
+      setMembersOpen(false);
+    }
+  };
+
+  document.addEventListener("mousedown", handleClickOutside);
+
+  return () => {
+    document.removeEventListener("mousedown", handleClickOutside);
+  };
+}, []);
   const [error, setError] = useState("");
   const [success, setSuccess] = useState("");
   const [activeTab, setActiveTab] = useState<"project" | "settings">("project");
@@ -159,7 +179,19 @@ export default function NewProjectPage() {
       send_project_created_email:
         data.send_project_created_email ?? false,
     }));
-  };
+    const { data: existingMembers, error: membersError } = await supabase
+    .from("project_members")
+    .select("user_id")
+    .eq("project_id", data.id);
+
+    if (membersError) {
+      console.error("Existing project members error:", membersError);
+    } else {
+      setSelectedMemberIds(
+        (existingMembers ?? []).map((member: any) => member.user_id)
+      );
+    }
+    };
 
   loadProjectForEdit();
 }, [editProjectId, supabase]);
@@ -173,6 +205,27 @@ export default function NewProjectPage() {
       [key]: value,
     }));
   };
+  const toggleProjectMember = (userId: string) => {
+  setSelectedMemberIds((current) =>
+    current.includes(userId)
+      ? current.filter((id) => id !== userId)
+      : [...current, userId]
+  );
+};
+const filteredProjectUsers = projectUsers.filter((profile: any) => {
+  const search = memberSearch.trim().toLowerCase();
+
+  if (!search) return true;
+
+  return (
+    String(profile.full_name ?? "")
+      .toLowerCase()
+      .includes(search) ||
+    String(profile.email ?? "")
+      .toLowerCase()
+      .includes(search)
+  );
+});
 
   const handleSave = async () => {
     setError("");
@@ -296,20 +349,53 @@ export default function NewProjectPage() {
       send_project_created_email:
         form.send_project_created_email,
         };
-    const { error: saveError } = isEditMode
-      ? await supabase
-          .from("projects")
-          .update(projectData)
-          .eq("id", editProjectId!)
-          .eq("user_id", user.id)
-      : await supabase
-          .from("projects")
-          .insert(projectData);
+    const { data: savedProject, error: saveError } = isEditMode
+  ? await supabase
+      .from("projects")
+      .update(projectData)
+      .eq("id", editProjectId!)
+      .eq("user_id", user.id)
+      .select("id, project_code")
+      .single()
+  : await supabase
+      .from("projects")
+      .insert(projectData)
+      .select("id, project_code")
+      .single();
           
     if (saveError) {
   setError(saveError.message);
   setSaving(false);
   return;
+}
+if (savedProject?.id) {
+  const { error: deleteMembersError } = await supabase
+    .from("project_members")
+    .delete()
+    .eq("project_id", savedProject.id);
+
+  if (deleteMembersError) {
+    setError(deleteMembersError.message);
+    setSaving(false);
+    return;
+  }
+
+  if (selectedMemberIds.length > 0) {
+    const memberRows = selectedMemberIds.map((userId) => ({
+      project_id: savedProject.id,
+      user_id: userId,
+    }));
+
+    const { error: insertMembersError } = await supabase
+      .from("project_members")
+      .insert(memberRows);
+
+    if (insertMembersError) {
+      setError(insertMembersError.message);
+      setSaving(false);
+      return;
+    }
+  }
 }
 
     setSaving(false);
@@ -321,10 +407,15 @@ setSuccess(
 );
 
 setTimeout(() => {
-  router.push("/projects");
+  if (savedProject?.project_code) {
+    router.push(`/projects/${savedProject.project_code}`);
+  } else {
+    router.push("/projects");
+  }
+
   router.refresh();
-}, 1200);
-  };
+}, 800);
+  }
 
   const inputClass =
     "w-full rounded-md border border-border-subtle bg-white px-3 py-2.5 text-sm text-gray-800 outline-none transition focus:border-brand focus:ring-2 focus:ring-brand/10";
@@ -581,67 +672,133 @@ setTimeout(() => {
 
           {/* Estimated + Member */}
           <div className="grid gap-5 md:grid-cols-2">
-            <label>
-              <span className={labelClass}>
-                Estimated Hours
-              </span>
-
-              <input
-                type="number"
-                min="0"
-                value={form.estimated_hours}
-                onChange={(e) =>
-                  updateField(
-                    "estimated_hours",
-                    e.target.value
-                  )
-                }
-                className={inputClass}
-              />
-            </label>
-
-            <label>
-              <span className={labelClass}>
-                Members
-              </span>
-
-              <input
-                value={form.members}
-                onChange={(e) =>
-                  updateField(
-                    "members",
-                    e.target.value
-                  )
-                }
-                placeholder="Member 1, Member 2"
-                className={inputClass}
-              />
-            </label>
           </div>
-          <label className="block">
+         <div
+        ref={membersDropdownRef} className="relative">
         <span className="mb-1.5 block text-xs font-semibold text-gray-700">
-          Assigned To
+          Assigned Members
         </span>
 
-        <select
-          value={form.assigned_to}
-          onChange={(e) =>
-            setForm((prev) => ({
-              ...prev,
-              assigned_to: e.target.value,
-            }))
-          }
-          className="w-full rounded-lg border border-gray-200 bg-white px-3 py-2.5 text-sm text-gray-900 outline-none transition focus:border-brand focus:ring-2 focus:ring-brand/10"
+        {/* Dropdown trigger */}
+        <button
+          type="button"
+          onClick={() => setMembersOpen((open) => !open)}
+          className="flex w-full items-center justify-between rounded-lg border border-gray-200 bg-white px-3 py-2.5 text-left text-sm text-gray-800 outline-none transition hover:border-gray-300 focus:border-brand focus:ring-2 focus:ring-brand/10"
         >
-          <option value="">Unassigned</option>
+          <span className="min-w-0 truncate">
+            {selectedMemberIds.length === 0
+              ? "Select members"
+              : projectUsers
+                  .filter((profile: any) =>
+                    selectedMemberIds.includes(profile.id)
+                  )
+                  .map(
+                    (profile: any) =>
+                      profile.full_name || profile.email || "User"
+                  )
+                  .join(", ")}
+          </span>
 
-          {projectUsers.map((profile: any) => (
-            <option key={profile.id} value={profile.id}>
-              {profile.full_name || profile.email || "User"}
-            </option>
-          ))}
-        </select>
-      </label>
+          <span className="ml-3 text-xs text-gray-400">
+            {membersOpen ? "▲" : "▼"}
+          </span>
+        </button>
+
+        {/* Dropdown */}
+        {membersOpen && (
+          <div className="absolute z-50 mt-1 w-full overflow-hidden rounded-lg border border-gray-200 bg-white shadow-lg">
+            {/* Search */}
+            <div className="border-b border-gray-100 p-2">
+              <input
+                type="text"
+                value={memberSearch}
+                onChange={(e) => setMemberSearch(e.target.value)}
+                placeholder="Search members..."
+                className="w-full rounded-md border border-gray-200 px-3 py-2 text-sm outline-none focus:border-brand focus:ring-2 focus:ring-brand/10"
+              />
+            </div>
+
+            {/* Select All / Deselect All */}
+            <div className="grid grid-cols-2 border-b border-gray-100">
+              <button
+                type="button"
+                onClick={() =>
+                  setSelectedMemberIds(
+                    projectUsers.map((profile: any) => profile.id)
+                  )
+                }
+                className="border-r border-gray-100 px-3 py-2 text-xs font-medium text-gray-600 hover:bg-gray-50"
+              >
+                Select All
+              </button>
+
+              <button
+                type="button"
+                onClick={() => setSelectedMemberIds([])}
+                className="px-3 py-2 text-xs font-medium text-gray-600 hover:bg-gray-50"
+              >
+                Deselect All
+              </button>
+            </div>
+
+            {/* Members */}
+            <div className="max-h-56 overflow-y-auto p-1">
+              {filteredProjectUsers.length === 0 ? (
+                <p className="px-3 py-3 text-sm text-gray-400">
+                  No members found
+                </p>
+              ) : (
+                filteredProjectUsers.map((profile: any) => {
+                  const selected = selectedMemberIds.includes(profile.id);
+
+                  return (
+                    <button
+                      key={profile.id}
+                      type="button"
+                      onClick={() => toggleProjectMember(profile.id)}
+                      className="flex w-full items-center gap-3 rounded-md px-3 py-2 text-left hover:bg-gray-50"
+                    >
+                      <div className="h-8 w-8 shrink-0 overflow-hidden rounded-full bg-gray-100">
+                        {profile.avatar_url ? (
+                          <img
+                            src={profile.avatar_url}
+                            alt={profile.full_name || "User"}
+                            className="h-full w-full object-cover"
+                          />
+                        ) : (
+                          <div className="flex h-full w-full items-center justify-center text-xs font-bold text-gray-600">
+                            {(profile.full_name || profile.email || "U")
+                              .charAt(0)
+                              .toUpperCase()}
+                          </div>
+                        )}
+                      </div>
+
+                      <div className="min-w-0 flex-1">
+                        <p className="truncate text-sm font-medium text-gray-800">
+                          {profile.full_name || "Unnamed User"}
+                        </p>
+                      </div>
+
+                      <div
+                        className={`flex h-5 w-5 items-center justify-center rounded border ${
+                          selected
+                            ? "border-blue-600 bg-blue-600 text-white"
+                            : "border-gray-300"
+                        }`}
+                      >
+                        {selected && (
+                          <CheckCircle2 size={14} />
+                        )}
+                      </div>
+                    </button>
+                  );
+                })
+              )}
+            </div>
+          </div>
+        )}
+      </div>
 
           {/* Dates */}
           <div className="grid gap-5 md:grid-cols-2">
