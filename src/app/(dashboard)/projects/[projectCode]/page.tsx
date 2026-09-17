@@ -16,6 +16,14 @@ export default function ProjectDetailsPage() {
   const [projectMembers, setProjectMembers] = useState<any[]>([]);
   const [projectTasks, setProjectTasks] = useState<any[]>([]);
   const [timeLogs, setTimeLogs] = useState<any[]>([]);
+  const [showTimeLogForm, setShowTimeLogForm] = useState(false);
+
+const [timeLogForm, setTimeLogForm] = useState({
+  log_date: new Date().toISOString().split("T")[0],
+  hours: "",
+  minutes: "",
+  note: "",
+});
   const [currentUserId, setCurrentUserId] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
@@ -134,6 +142,58 @@ setCurrentUserId(user?.id ?? null);
     }, 2000);
   };
 
+  const handleSaveTime = async () => {
+  if (!project?.id) return;
+
+  const hours = Math.max(0, Number(timeLogForm.hours || 0));
+  const minutes = Math.max(0, Number(timeLogForm.minutes || 0));
+
+  const totalMinutes = Math.round(hours * 60 + minutes);
+
+  if (!timeLogForm.log_date || totalMinutes <= 0) {
+    setError("Please enter a valid time.");
+    return;
+  }
+
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+
+  if (!user) {
+    setError("You must be signed in.");
+    return;
+  }
+
+  const { data: newLog, error: insertError } = await supabase
+    .from("project_time_logs")
+    .insert({
+      project_id: project.id,
+      user_id: user.id,
+      log_date: timeLogForm.log_date,
+      minutes: totalMinutes,
+      note: timeLogForm.note.trim() || null,
+    })
+    .select("*")
+    .single();
+
+  if (insertError) {
+    setError(insertError.message);
+    return;
+  }
+
+  setTimeLogs((current) => [...current, newLog]);
+
+  setTimeLogForm({
+    log_date: new Date().toISOString().split("T")[0],
+    hours: "",
+    minutes: "",
+    note: "",
+  });
+
+  setShowTimeLogForm(false);
+  setError("");
+};
+
   const totalLoggedMinutes = timeLogs.reduce(
   (total: number, log: any) => total + Number(log.minutes ?? 0),
   0
@@ -205,13 +265,43 @@ const daysLeft = project?.due_date
   project?.start_date && project?.due_date
     ? Math.max(
         1,
-        Math.ceil(
-          (new Date(project.due_date).getTime() -
-            new Date(project.start_date).getTime()) /
+        Math.floor(
+          (new Date(`${project.due_date}T00:00:00`).getTime() -
+            new Date(`${project.start_date}T00:00:00`).getTime()) /
             (1000 * 60 * 60 * 24)
-        )
+        ) + 1
       )
     : 0;
+
+const dailyRequiredProgress =
+  totalProjectDays > 0
+    ? 100 / totalProjectDays
+    : 0;
+const expectedProgress = (() => {
+  if (!project?.start_date || !project?.due_date || totalProjectDays <= 0) {
+    return 0;
+  }
+
+  const start = new Date(`${project.start_date}T00:00:00`);
+  const end = new Date(`${project.due_date}T00:00:00`);
+
+  const todayDate = new Date();
+  todayDate.setHours(0, 0, 0, 0);
+
+  if (todayDate < start) return 0;
+  if (todayDate > end) return 100;
+
+  const elapsedDays =
+    Math.floor(
+      (todayDate.getTime() - start.getTime()) /
+        (1000 * 60 * 60 * 24)
+    ) + 1;
+
+  return Math.min(
+    100,
+    Math.round(elapsedDays * dailyRequiredProgress)
+  );
+})();
 
 const timeProgress =
   totalProjectDays > 0 && daysLeft !== null
@@ -375,50 +465,18 @@ const timeProgress =
         </p>
 
         <span className="text-sm font-semibold text-gray-600">
-          {Math.min(100, Math.max(0, Number(project.progress ?? 0)))}%
+          100%
         </span>
       </div>
 
       <div className="h-2 w-full overflow-hidden rounded-full bg-gray-100">
         <div
           className="h-full rounded-full bg-emerald-500 transition-all"
-          style={{
-            width: `${Math.min(
-              100,
-              Math.max(0, Number(project.progress ?? 0))
-            )}%`,
-          }}
+          style={{ width: "100%" }}
         />
       </div>
     </div>
 
-      {/* Share URL */}
-      <div className="rounded-xl border border-gray-200 bg-white p-4">
-        <p className="mb-2 text-xs font-semibold uppercase tracking-wide text-gray-500">
-          Project Link
-        </p>
-
-        <div className="flex items-center gap-2">
-          <input
-            readOnly
-            value={
-              typeof window !== "undefined"
-                ? window.location.href
-                : ""
-            }
-            className="w-full rounded-lg border border-gray-200 bg-gray-50 px-3 py-2 text-sm text-gray-700"
-          />
-
-          <button
-            type="button"
-            onClick={handleCopyLink}
-            className="rounded-lg border border-gray-200 px-3 py-2 text-sm font-medium hover:bg-gray-50"
-          >
-            Copy
-          </button>
-        </div>
-      </div>
-      {/* Overview */}
       <div className="grid gap-5 lg:grid-cols-[1.15fr_0.85fr]">
 
         {/* LEFT SIDE */}
@@ -502,7 +560,7 @@ const timeProgress =
 
               <Detail
                 label="Total Logged Hours"
-                value={project.total_logged_hours || "00:00"}
+                value={totalLoggedHours}
               />
 
               <Detail
@@ -563,7 +621,93 @@ const timeProgress =
                   />
                 </div>
               </div>
+              
             </div>
+{/* Project Pulse */}
+<div className="relative min-h-[320px] overflow-hidden rounded-xl border border-gray-200 bg-white p-5">
+  {/* Animated background */}
+  <div className="pointer-events-none absolute inset-0">
+    <div className="absolute left-1/2 top-1/2 h-64 w-64 -translate-x-1/2 -translate-y-1/2 rounded-full bg-blue-100/40 blur-3xl animate-pulse" />
+  </div>
+
+  <div className="relative flex h-full flex-col">
+    <div className="flex items-center justify-between">
+      <div>
+        <h3 className="text-sm font-bold text-gray-900">
+          Project Pulse
+        </h3>
+
+        <p className="mt-1 text-xs text-gray-400">
+          Live project overview
+        </p>
+      </div>
+
+      <div className="flex items-center gap-2">
+        <span className="relative flex h-2.5 w-2.5">
+          <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-emerald-400 opacity-75" />
+          <span className="relative inline-flex h-2.5 w-2.5 rounded-full bg-emerald-500" />
+        </span>
+
+        <span className="text-xs font-semibold text-emerald-600">
+          Active
+        </span>
+      </div>
+    </div>
+
+    {/* Animated center */}
+    <div className="flex flex-1 items-center justify-center py-6">
+      <div className="relative flex h-40 w-40 items-center justify-center">
+        <div className="absolute inset-0 rounded-full border border-blue-200 animate-ping opacity-20" />
+
+        <div className="absolute inset-2 rounded-full border-4 border-dashed border-blue-400 animate-spin [animation-duration:8s]" />
+
+        <div className="absolute inset-8 rounded-full border border-blue-100 animate-pulse" />
+
+        <div className="relative flex h-24 w-24 flex-col items-center justify-center rounded-full bg-blue-50 shadow-sm">
+          <span className="text-2xl font-bold text-blue-600">
+            {expectedProgress}%
+          </span>
+
+          <span className="text-[10px] font-medium text-gray-400">
+            Expected Today
+          </span>
+          <span className="mt-1 text-[10px] font-semibold text-blue-500">
+            {dailyRequiredProgress.toFixed(1)}% / day
+          </span>
+        </div>
+      </div>
+    </div>
+
+    <div className="grid grid-cols-3 gap-2">
+  <div className="rounded-lg bg-gray-50 p-3 text-center">
+    <p className="text-lg font-bold text-gray-900">
+      {totalProjectDays}
+    </p>
+    <p className="text-[10px] text-gray-400">
+      Total Days
+    </p>
+  </div>
+
+  <div className="rounded-lg bg-gray-50 p-3 text-center">
+    <p className="text-lg font-bold text-gray-900">
+      {projectMembers.length}
+    </p>
+    <p className="text-[10px] text-gray-400">
+      Members
+    </p>
+  </div>
+
+  <div className="rounded-lg bg-gray-50 p-3 text-center">
+    <p className="text-lg font-bold text-gray-900">
+      {totalTasks}
+    </p>
+    <p className="text-[10px] text-gray-400">
+      Tasks
+    </p>
+  </div>
+</div>
+  </div>
+</div>
           </div>
         </div>
         {/* Expenses */}
@@ -621,14 +765,122 @@ const timeProgress =
               </h3>
 
               <p className="mt-1 text-lg font-bold text-gray-900">
-                {project.total_logged_hours || "00:00"}
+                {totalLoggedHours}
               </p>
             </div>
 
+            <div className="flex items-center gap-2">
             <span className="text-xs font-medium text-gray-500">
               This Week
             </span>
+
+            <button
+              type="button"
+              onClick={() => setShowTimeLogForm(true)}
+              className="rounded-lg bg-blue-600 px-3 py-1.5 text-xs font-semibold text-white hover:bg-blue-700"
+            >
+              + Log Time
+            </button>
           </div>
+          </div>
+
+          {showTimeLogForm && (
+  <div className="mb-5 rounded-lg border border-gray-200 bg-gray-50 p-4">
+    <div className="grid gap-3 sm:grid-cols-3">
+      <label className="block">
+        <span className="mb-1 block text-xs font-medium text-gray-600">
+          Date
+        </span>
+        <input
+          type="date"
+          value={timeLogForm.log_date}
+          onChange={(e) =>
+            setTimeLogForm((current) => ({
+              ...current,
+              log_date: e.target.value,
+            }))
+          }
+          className="w-full rounded-lg border border-gray-200 bg-white px-3 py-2 text-sm"
+        />
+      </label>
+
+      <label className="block">
+        <span className="mb-1 block text-xs font-medium text-gray-600">
+          Hours
+        </span>
+        <input
+          type="number"
+          min="0"
+          value={timeLogForm.hours}
+          onChange={(e) =>
+            setTimeLogForm((current) => ({
+              ...current,
+              hours: e.target.value,
+            }))
+          }
+          placeholder="0"
+          className="w-full rounded-lg border border-gray-200 bg-white px-3 py-2 text-sm"
+        />
+      </label>
+
+      <label className="block">
+        <span className="mb-1 block text-xs font-medium text-gray-600">
+          Minutes
+        </span>
+        <input
+          type="number"
+          min="0"
+          max="59"
+          value={timeLogForm.minutes}
+          onChange={(e) =>
+            setTimeLogForm((current) => ({
+              ...current,
+              minutes: e.target.value,
+            }))
+          }
+          placeholder="0"
+          className="w-full rounded-lg border border-gray-200 bg-white px-3 py-2 text-sm"
+        />
+      </label>
+    </div>
+
+    <label className="mt-3 block">
+      <span className="mb-1 block text-xs font-medium text-gray-600">
+        Note
+      </span>
+      <input
+        type="text"
+        value={timeLogForm.note}
+        onChange={(e) =>
+          setTimeLogForm((current) => ({
+            ...current,
+            note: e.target.value,
+          }))
+        }
+        placeholder="What did you work on?"
+        className="w-full rounded-lg border border-gray-200 bg-white px-3 py-2 text-sm"
+      />
+    </label>
+
+    <div className="mt-3 flex justify-end gap-2">
+      <button
+        type="button"
+        onClick={() => setShowTimeLogForm(false)}
+        className="rounded-lg border border-gray-200 bg-white px-3 py-2 text-xs font-semibold text-gray-600"
+      >
+        Cancel
+      </button>
+
+      <button
+      type="button"
+      onClick={handleSaveTime}
+      className="rounded-lg bg-blue-600 px-3 py-2 text-xs font-semibold text-white"
+    >
+      Save Time
+    </button>
+    </div>
+  </div>
+)}
 
           <div className="relative h-44">
             {/* Grid lines */}
@@ -651,59 +903,41 @@ const timeProgress =
                 "Friday",
                 "Saturday",
                 "Sunday",
-              ].map((day) => (
-                <div
-                  key={day}
-                  className="flex h-full flex-1 flex-col items-center justify-end"
-                >
-                  <div className="w-full max-w-8 rounded-t bg-blue-400/70" />
+              ].map((day, index) => {
+                const minutes = weeklyLoggedMinutes[index] ?? 0;
 
-                  <span className="mt-2 text-[10px] text-gray-400">
-                    {day.slice(0, 3)}
-                  </span>
-                </div>
-              ))}
+                const height =
+                  minutes > 0
+                    ? Math.max(6, (minutes / maxWeeklyMinutes) * 100)
+                    : 0;
+
+                return (
+                  <div
+                    key={day}
+                    className="flex h-full flex-1 flex-col items-center justify-end"
+                  >
+                    <div className="mb-1 text-[10px] font-medium text-gray-500">
+                      {minutes > 0
+                        ? `${Math.floor(minutes / 60)}h ${minutes % 60}m`
+                        : ""}
+                    </div>
+
+                    <div
+                      className="w-full max-w-8 rounded-t bg-blue-400/70 transition-all"
+                      style={{
+                        height: `${height}%`,
+                        minHeight: minutes > 0 ? "4px" : "0px",
+                      }}
+                    />
+
+                    <span className="mt-2 text-[10px] text-gray-400">
+                      {day.slice(0, 3)}
+                    </span>
+                  </div>
+                );
+              })}
             </div>
           </div>
-        </div>
-      </div>
-
-      {/* Project Resources */}
-      <div className="rounded-xl border border-gray-200 bg-white p-5">
-        <h2 className="mb-4 text-sm font-bold text-gray-900">
-          Project Resources
-        </h2>
-
-        <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
-          <Detail
-            label="Order Page"
-            value={project.order_page_url}
-          />
-
-          <Detail
-            label="Conversation Page"
-            value={project.conversation_page_url}
-          />
-
-          <Detail
-            label="Files / Links"
-            value={project.files_links}
-          />
-
-          <Detail
-            label="Meeting URL"
-            value={project.meeting_url}
-          />
-
-          <Detail
-            label="Website URL"
-            value={project.website_url}
-          />
-
-          <Detail
-            label="Working File"
-            value={project.working_file_url}
-          />
         </div>
       </div>
 
@@ -738,124 +972,7 @@ const timeProgress =
           label="Profit Share"
           value={project.profit_share}
         />
-
-        <Detail
-          label="Custom Offer Message"
-          value={project.custom_offer_message}
-        />
       </div>
-    </div>
-
-      {/* Assigned Members */}
-      {/* Assigned Members */}
-      <div className="rounded-xl border border-gray-200 bg-white p-5">
-      <div className="mb-4">
-        <h2 className="text-sm font-bold text-gray-900">
-        Project Members
-        </h2>
-
-      <p className="mt-1 text-xs text-gray-500">
-      {projectMembers.length === 0
-        ? "No one assigned"
-        : `${projectMembers.length} ${
-            projectMembers.length === 1 ? "person" : "people"
-          } assigned`}
-    </p>
-  </div>
-
-  {projectMembers.length === 0 ? (
-    <p className="text-sm text-gray-400">
-      No team member assigned to this project.
-    </p>
-  ) : (
-    <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
-      {projectMembers.map((member: any) => (
-        <div
-          key={member.id}
-          className="flex items-center gap-3 rounded-lg border border-gray-100 p-3"
-        >
-          <div className="h-10 w-10 shrink-0 overflow-hidden rounded-full bg-gray-100">
-            {member.avatar_url ? (
-              <img
-                src={member.avatar_url}
-                alt={member.full_name || "Member"}
-                className="h-full w-full object-cover"
-              />
-            ) : (
-              <div className="flex h-full w-full items-center justify-center text-sm font-bold text-gray-600">
-                {(member.full_name || member.email || "U")
-                  .charAt(0)
-                  .toUpperCase()}
-              </div>
-            )}
-          </div>
-
-          <div className="min-w-0">
-            <p className="truncate text-sm font-semibold text-gray-800">
-              {member.full_name || "Unnamed User"}
-            </p>
-
-            <p className="truncate text-xs text-gray-400">
-              {member.email || "No email"}
-            </p>
-          </div>
-        </div>
-      ))}
-    </div>
-  )}
-</div>
-
-      {/* Project Tasks */}
-<div className="rounded-xl border border-gray-200 bg-white p-5">
-  <div className="mb-4 flex items-center justify-between">
-    <div>
-      <h2 className="text-sm font-bold text-gray-900">
-        Project Tasks
-      </h2>
-
-      <p className="mt-0.5 text-xs text-gray-500">
-        {openTasks} open of {totalTasks} total tasks
-      </p>
-    </div>
-
-    <a
-      href="/tasks"
-      className="text-xs font-semibold text-blue-600 hover:underline"
-    >
-      View All Tasks
-    </a>
-  </div>
-
-  {projectTasks.length === 0 ? (
-    <p className="text-sm text-gray-400">
-      No tasks added to this project yet.
-    </p>
-      ) : (
-        <div className="space-y-2">
-          {projectTasks.slice(0, 5).map((task: any) => (
-            <div
-              key={task.id}
-              className="flex items-center justify-between gap-3 rounded-lg border border-gray-100 px-3 py-2.5"
-            >
-              <div className="min-w-0">
-                <p className="truncate text-sm font-semibold text-gray-800">
-                  {task.title || task.name || task.task_name || "Untitled Task"}
-                </p>
-
-                <p className="mt-0.5 text-xs text-gray-400">
-                  {task.due_date
-                    ? `Due: ${task.due_date}`
-                    : "No due date"}
-                </p>
-              </div>
-
-              <span className="shrink-0 rounded-md bg-gray-100 px-2 py-1 text-[11px] font-semibold text-gray-600">
-                {task.status || "No status"}
-              </span>
-            </div>
-          ))}
-        </div>
-      )}
     </div>
 
       {/* Description */}
@@ -895,7 +1012,7 @@ function Detail({
     Open Link
   </a>
 ) : (
-  <p className="mt-1 break-words text-sm font-semibold text-gray-800">
+  <p className="mt-1 whitespace-pre-wrap break-words text-sm font-semibold text-gray-800">
     {value || "—"}
   </p>
 )}

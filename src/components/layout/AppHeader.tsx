@@ -26,6 +26,133 @@ export default function AppHeader({ onMenuClick }: { onMenuClick: () => void }) 
   const { user, logout } = useAuth();
   const supabase = useMemo(() => createClient(), []);
   const [quickOpen, setQuickOpen] = useState(false);
+  const [searchQuery, setSearchQuery] = useState("");
+  const [searchOpen, setSearchOpen] = useState(false);
+  const [searchResults, setSearchResults] = useState<any[]>([]);
+  const globalPages = [
+  { title: "Dashboard", type: "Page", href: "/dashboard" },
+  { title: "Customers", type: "Page", href: "/customers" },
+  { title: "Projects", type: "Page", href: "/projects" },
+  { title: "Tasks", type: "Page", href: "/tasks" },
+  { title: "Support", type: "Page", href: "/support" },
+  { title: "Leads", type: "Page", href: "/leads" },
+  { title: "Knowledge Base", type: "Page", href: "/knowledge-base" },
+  { title: "Settings", type: "Page", href: "/settings" },
+  { title: "Profile", type: "Page", href: "/profile" },
+  { title: "Subscriptions", type: "Page", href: "/subscriptions" },
+  { title: "Sales", type: "Page", href: "/sales" },
+  { title: "Utilities", type: "Page", href: "/utilities" },
+  { title: "New Project", type: "Action", href: "/projects/new" },
+];
+  useEffect(() => {
+  const query = searchQuery.trim();
+
+  if (query.length < 2) {
+    setSearchResults([]);
+    return;
+  }
+
+  const timer = setTimeout(async () => {
+    const results: any[] = [];
+
+    const [
+  { data: projectsByName },
+  { data: projectsByCode },
+  { data: projectsByClient },
+] = await Promise.all([
+  supabase
+    .from("projects")
+    .select("id, project_code, name, client_name")
+    .ilike("name", `%${query}%`)
+    .limit(5),
+
+  supabase
+    .from("projects")
+    .select("id, project_code, name, client_name")
+    .ilike("project_code", `%${query}%`)
+    .limit(5),
+
+  supabase
+    .from("projects")
+    .select("id, project_code, name, client_name")
+    .ilike("client_name", `%${query}%`)
+    .limit(5),
+]);
+
+const projects = Array.from(
+  new Map(
+    [
+      ...(projectsByName ?? []),
+      ...(projectsByCode ?? []),
+      ...(projectsByClient ?? []),
+    ].map((item: any) => [item.id, item])
+  ).values()
+);
+
+    (projects ?? []).forEach((item: any) => {
+      results.push({
+        type: "Project",
+        title: item.name || item.project_code,
+        subtitle: item.project_code || item.client_name || "",
+        href: `/projects/${item.project_code}`,
+      });
+    });
+
+    // Profiles / Users
+    const { data: profiles } = await supabase
+      .from("profiles")
+      .select("id, full_name, email")
+      .or(
+        `full_name.ilike.%${query}%,email.ilike.%${query}%`
+      )
+      .limit(5);
+
+    (profiles ?? []).forEach((item: any) => {
+      results.push({
+        type: "Profile",
+        title: item.full_name || item.email,
+        subtitle: item.email || "",
+        href: `/profile`,
+      });
+    });
+
+    // Tasks
+    const { data: tasks } = await supabase
+      .from("tasks")
+      .select("id, title, status")
+      .ilike("title", `%${query}%`)
+      .limit(5);
+
+    (tasks ?? []).forEach((item: any) => {
+      results.push({
+        type: "Task",
+        title: item.title || "Untitled Task",
+        subtitle: item.status || "",
+        href: "/tasks",
+      });
+    });
+
+    const normalizedQuery = query.toLowerCase();
+
+const pageResults = globalPages
+  .filter((item) =>
+    item.title.toLowerCase().includes(normalizedQuery)
+  )
+  .map((item) => ({
+    type: item.type,
+    title: item.title,
+    subtitle: item.type === "Action" ? "Quick action" : "Go to page",
+    href: item.href,
+  }));
+
+results.unshift(...pageResults);
+
+    setSearchResults(results);
+    setSearchOpen(true);
+  }, 300);
+
+  return () => clearTimeout(timer);
+}, [searchQuery, supabase]);
   const [notifOpen, setNotifOpen] = useState(false);
   const [profileOpen, setProfileOpen] = useState(false);
   const [notifications, setNotifications] = useState<any[]>([]);
@@ -278,7 +405,60 @@ useEffect(() => {
       <div className="flex flex-1 items-center justify-center">
         <div className="relative w-full max-w-md">
           <Search size={14} className="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" />
-          <input placeholder="Search..." className="w-full rounded-full border border-border-subtle bg-gray-50 py-2 pl-9 pr-4 text-[13px] outline-none focus:border-brand" />
+          <input
+          value={searchQuery}
+          onChange={(e) => {
+            const value = e.target.value;
+            setSearchQuery(value);
+            setSearchOpen(value.trim().length > 0);
+          }}
+          onFocus={() => {
+            if (searchQuery.trim()) {
+              setSearchOpen(true);
+            }
+          }}
+          placeholder="Search..."
+          className="w-full rounded-full border border-border-subtle bg-gray-50 py-2 pl-9 pr-4 text-[13px] outline-none focus:border-brand"
+        />
+        {searchOpen && searchQuery.trim().length >= 2 && (
+  <div className="absolute left-0 right-0 top-full z-50 mt-2 max-h-[420px] overflow-y-auto rounded-xl border border-gray-200 bg-white shadow-xl">
+    {searchResults.length === 0 ? (
+      <div className="px-4 py-5 text-center text-sm text-gray-400">
+        No results found
+      </div>
+    ) : (
+      <div className="p-2">
+        {searchResults.map((result: any, index: number) => (
+          <a
+            key={`${result.type}-${index}`}
+            href={result.href}
+            onClick={() => {
+              setSearchOpen(false);
+              setSearchQuery("");
+            }}
+            className="flex items-center justify-between gap-3 rounded-lg px-3 py-2.5 transition hover:bg-gray-50"
+          >
+            <div className="min-w-0">
+              <p className="truncate text-sm font-semibold text-gray-800">
+                {result.title}
+              </p>
+
+              {result.subtitle && (
+                <p className="mt-0.5 truncate text-xs text-gray-400">
+                  {result.subtitle}
+                </p>
+              )}
+            </div>
+
+            <span className="shrink-0 rounded-md bg-gray-100 px-2 py-1 text-[10px] font-semibold text-gray-500">
+              {result.type}
+            </span>
+          </a>
+        ))}
+      </div>
+    )}
+  </div>
+)}
         </div>
         <div className="relative ml-2">
           <button onClick={() => setQuickOpen((v) => !v)} className="flex h-9 w-9 items-center justify-center rounded-full bg-brand text-white hover:bg-brand/90">

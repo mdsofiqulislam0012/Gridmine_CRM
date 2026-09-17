@@ -1,12 +1,13 @@
 "use client";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import {
   LayoutDashboard, Users, Zap, Repeat, FolderKanban, CheckSquare, LifeBuoy,
   Target, HelpCircle, Circle, ChevronDown, ChevronLeft,
 } from "lucide-react";
 import { useAuth } from "@/lib/auth";
+import { createClient } from "@/lib/supabase/client";
 
 const salesLinks = [
   { href: "/sales/proposals", label: "Proposals" },
@@ -24,6 +25,36 @@ const utilitiesLinks = [
 export default function AppSidebar({ open, onClose }: { open: boolean; onClose: () => void }) {
   const pathname = usePathname();
   const { user } = useAuth();
+  const supabase = useMemo(() => createClient(), []);
+  const [userRole, setUserRole] = useState("user");
+  useEffect(() => {
+  const loadUserRole = async () => {
+    const {
+      data: { user: authUser },
+      error: authError,
+    } = await supabase.auth.getUser();
+
+    if (authError || !authUser) {
+      setUserRole("user");
+      return;
+    }
+
+    const { data, error } = await supabase
+      .from("profiles")
+      .select("role")
+      .eq("id", authUser.id)
+      .maybeSingle();
+
+    if (error) {
+      console.error("Sidebar role error:", error);
+      return;
+    }
+
+    setUserRole(data?.role || "user");
+  };
+
+  loadUserRole();
+}, [supabase]);
   const [salesOpen, setSalesOpen] = useState(pathname.startsWith("/sales"));
   const [utilOpen, setUtilOpen] = useState(pathname.startsWith("/utilities"));
 
