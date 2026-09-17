@@ -58,6 +58,9 @@ export default function AppSidebar({ open, onClose }: { open: boolean; onClose: 
   const [salesOpen, setSalesOpen] = useState(pathname.startsWith("/sales"));
   const [utilOpen, setUtilOpen] = useState(pathname.startsWith("/utilities"));
 
+  const hasFullAccess =
+  userRole === "admin" || userRole === "sub_admin";
+
   const isActive = (href: string) => pathname === href;
   const isParentActive = (prefix: string) => pathname.startsWith(prefix);
 
@@ -106,39 +109,139 @@ export default function AppSidebar({ open, onClose }: { open: boolean; onClose: 
         </div>
 
         <nav className="flex-1 space-y-0.5 overflow-y-auto px-3 pb-4 scrollbar-none">
-          <Link href="/dashboard" className={linkClass(isActive("/dashboard"))}><LayoutDashboard size={16} /> Dashboard</Link>
-          <Link href="/customers" className={linkClass(isActive("/customers"))}><Users size={16} /> Customers</Link>
+            <Link
+              href="/dashboard"
+              className={linkClass(isActive("/dashboard"))}
+            >
+              <LayoutDashboard size={16} />
+              Dashboard
+            </Link>
 
-          <button onClick={() => setSalesOpen((v) => !v)} className={`flex w-full items-center justify-between rounded-md px-3 py-2 text-[13.5px] font-medium ${isParentActive("/sales") ? "text-brand" : "text-gray-600 hover:bg-gray-50"}`}>
-            <span className="flex items-center gap-2.5"><Zap size={16} /> Sales</span>
-            <ChevronDown size={14} className={`transition-transform ${salesOpen ? "rotate-180" : ""}`} />
-          </button>
-          {salesOpen && (
-            <div className="ml-6 space-y-0.5 border-l border-border-subtle pl-3">
-              {salesLinks.map((l) => (
-                <Link key={l.href} href={l.href} className={linkClass(isActive(l.href))}>{l.label}</Link>
-              ))}
-            </div>
-          )}
+            <Link
+              href="/customers"
+              className={linkClass(isActive("/customers"))}
+            >
+              <Users size={16} />
+              Customers
+            </Link>
 
-          <Link href="/subscriptions" className={linkClass(isActive("/subscriptions"))}><Repeat size={16} /> Subscriptions</Link>
-          <Link href="/projects" className={linkClass(isActive("/projects"))}><FolderKanban size={16} /> Projects</Link>
-          <Link href="/tasks" className={linkClass(isActive("/tasks"))}><CheckSquare size={16} /> Tasks</Link>
-          <Link href="/support" className={linkClass(isActive("/support"))}><LifeBuoy size={16} /> Support</Link>
-          <Link href="/leads" className={linkClass(isActive("/leads"))}><Target size={16} /> Leads</Link>
-          <Link href="/knowledge-base" className={linkClass(isActive("/knowledge-base"))}><HelpCircle size={16} /> Knowledge Base</Link>
+            <button
+              onClick={() => setSalesOpen((v) => !v)}
+              className={`flex w-full items-center justify-between rounded-md px-3 py-2 text-[13.5px] font-medium ${
+                isParentActive("/sales")
+                  ? "text-brand"
+                  : "text-gray-600 hover:bg-gray-50"
+              }`}
+            >
+              <span className="flex items-center gap-2.5">
+                <Zap size={16} />
+                Sales
+              </span>
 
-          <button onClick={() => setUtilOpen((v) => !v)} className={`flex w-full items-center justify-between rounded-md px-3 py-2 text-[13.5px] font-medium ${isParentActive("/utilities") ? "text-brand" : "text-gray-600 hover:bg-gray-50"}`}>
-            <span className="flex items-center gap-2.5"><Circle size={16} /> Utilities</span>
-            <ChevronDown size={14} className={`transition-transform ${utilOpen ? "rotate-180" : ""}`} />
-          </button>
-          {utilOpen && (
-            <div className="ml-6 space-y-0.5 border-l border-border-subtle pl-3">
-              {utilitiesLinks.map((l) => (
-                <Link key={l.href} href={l.href} className={linkClass(isActive(l.href))}>{l.label}</Link>
-              ))}
-            </div>
-          )}
+              <ChevronDown
+                size={14}
+                className={`transition-transform ${
+                  salesOpen ? "rotate-180" : ""
+                }`}
+              />
+            </button>
+
+            {salesOpen && (
+              <div className="ml-6 space-y-0.5 border-l border-border-subtle pl-3">
+                {salesLinks.map((l) => (
+                  <Link
+                    key={l.href}
+                    href={l.href}
+                    className={linkClass(isActive(l.href))}
+                  >
+                    {l.label}
+                  </Link>
+                ))}
+              </div>
+            )}
+
+            <Link
+              href="/subscriptions"
+              className={linkClass(isActive("/subscriptions"))}
+            >
+              <Repeat size={16} />
+              Subscriptions
+            </Link>
+
+          <Link
+            href="/projects"
+            className={linkClass(isActive("/projects"))}
+          >
+            <FolderKanban size={16} />
+            Projects
+          </Link>
+
+              <Link
+                href="/tasks"
+                className={linkClass(isActive("/tasks"))}
+              >
+                <CheckSquare size={16} />
+                Tasks
+              </Link>
+
+              <Link
+                href="/support"
+                className={linkClass(isActive("/support"))}
+              >
+                <LifeBuoy size={16} />
+                Support
+              </Link>
+
+              <Link
+                href="/leads"
+                className={linkClass(isActive("/leads"))}
+              >
+                <Target size={16} />
+                Leads
+              </Link>
+
+              <Link
+                href="/knowledge-base"
+                className={linkClass(isActive("/knowledge-base"))}
+              >
+                <HelpCircle size={16} />
+                Knowledge Base
+              </Link>
+
+              <button
+                onClick={() => setUtilOpen((v) => !v)}
+                className={`flex w-full items-center justify-between rounded-md px-3 py-2 text-[13.5px] font-medium ${
+                  isParentActive("/utilities")
+                    ? "text-brand"
+                    : "text-gray-600 hover:bg-gray-50"
+                }`}
+              >
+                <span className="flex items-center gap-2.5">
+                  <Circle size={16} />
+                  Utilities
+                </span>
+
+                <ChevronDown
+                  size={14}
+                  className={`transition-transform ${
+                    utilOpen ? "rotate-180" : ""
+                  }`}
+                />
+              </button>
+
+              {utilOpen && (
+                <div className="ml-6 space-y-0.5 border-l border-border-subtle pl-3">
+                  {utilitiesLinks.map((l) => (
+                    <Link
+                      key={l.href}
+                      href={l.href}
+                      className={linkClass(isActive(l.href))}
+                    >
+                      {l.label}
+                    </Link>
+                  ))}
+                </div>
+              )}
         </nav>
       </aside>
     </>

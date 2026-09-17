@@ -29,6 +29,28 @@ export default function AppHeader({ onMenuClick }: { onMenuClick: () => void }) 
   const [searchQuery, setSearchQuery] = useState("");
   const [searchOpen, setSearchOpen] = useState(false);
   const [searchResults, setSearchResults] = useState<any[]>([]);
+  const [userRole, setUserRole] = useState("user");
+  useEffect(() => {
+  const loadUserRole = async () => {
+    const {
+      data: { user: authUser },
+    } = await supabase.auth.getUser();
+
+    if (!authUser) return;
+
+    const { data } = await supabase
+      .from("profiles")
+      .select("role")
+      .eq("id", authUser.id)
+      .maybeSingle();
+
+    setUserRole(data?.role || "user");
+  };
+
+  loadUserRole();
+}, [supabase]);
+  const hasFullAccess =
+  userRole === "admin" || userRole === "sub_admin";
   const globalPages = [
   { title: "Dashboard", type: "Page", href: "/dashboard" },
   { title: "Customers", type: "Page", href: "/customers" },
@@ -98,46 +120,51 @@ const projects = Array.from(
       });
     });
 
-    // Profiles / Users
-    const { data: profiles } = await supabase
-      .from("profiles")
-      .select("id, full_name, email")
-      .or(
-        `full_name.ilike.%${query}%,email.ilike.%${query}%`
-      )
-      .limit(5);
+    if (hasFullAccess) {
+  // Profiles / Users
+  const { data: profiles } = await supabase
+    .from("profiles")
+    .select("id, full_name, email")
+    .or(`full_name.ilike.%${query}%,email.ilike.%${query}%`)
+    .limit(5);
 
-    (profiles ?? []).forEach((item: any) => {
-      results.push({
-        type: "Profile",
-        title: item.full_name || item.email,
-        subtitle: item.email || "",
-        href: `/profile`,
-      });
+  (profiles ?? []).forEach((item: any) => {
+    results.push({
+      type: "Profile",
+      title: item.full_name || item.email,
+      subtitle: item.email || "",
+      href: "/profile",
     });
+  });
 
-    // Tasks
-    const { data: tasks } = await supabase
-      .from("tasks")
-      .select("id, title, status")
-      .ilike("title", `%${query}%`)
-      .limit(5);
+  // Tasks
+  const { data: tasks } = await supabase
+    .from("tasks")
+    .select("id, title, status")
+    .ilike("title", `%${query}%`)
+    .limit(5);
 
-    (tasks ?? []).forEach((item: any) => {
-      results.push({
-        type: "Task",
-        title: item.title || "Untitled Task",
-        subtitle: item.status || "",
-        href: "/tasks",
-      });
+  (tasks ?? []).forEach((item: any) => {
+    results.push({
+      type: "Task",
+      title: item.title || "Untitled Task",
+      subtitle: item.status || "",
+      href: "/tasks",
     });
-
-    const normalizedQuery = query.toLowerCase();
+  });
+}
+const normalizedQuery = query.toLowerCase();
 
 const pageResults = globalPages
-  .filter((item) =>
-    item.title.toLowerCase().includes(normalizedQuery)
-  )
+  .filter((item) => {
+    if (!hasFullAccess && item.href !== "/projects") {
+      return false;
+    }
+
+    return item.title
+      .toLowerCase()
+      .includes(normalizedQuery);
+  })
   .map((item) => ({
     type: item.type,
     title: item.title,
@@ -152,7 +179,7 @@ results.unshift(...pageResults);
   }, 300);
 
   return () => clearTimeout(timer);
-}, [searchQuery, supabase]);
+}, [searchQuery, supabase, hasFullAccess]);
   const [notifOpen, setNotifOpen] = useState(false);
   const [profileOpen, setProfileOpen] = useState(false);
   const [notifications, setNotifications] = useState<any[]>([]);
@@ -459,19 +486,30 @@ useEffect(() => {
     )}
   </div>
 )}
-        </div>
-        <div className="relative ml-2">
-          <button onClick={() => setQuickOpen((v) => !v)} className="flex h-9 w-9 items-center justify-center rounded-full bg-brand text-white hover:bg-brand/90">
+  </div>
+    {hasFullAccess && (
+      <div className="relative ml-2">
+        <button
+          onClick={() => setQuickOpen((v) => !v)}
+            className="flex h-9 w-9 items-center justify-center rounded-full bg-brand text-white hover:bg-brand/90"
+          >
             <Plus size={18} />
           </button>
+
           {quickOpen && (
             <div className="absolute right-0 z-20 mt-1 w-44 rounded-md border border-border-subtle bg-white py-1 shadow-lg">
               {["New Customer", "New Project", "New Task", "New Invoice"].map((i) => (
-                <button key={i} className="block w-full px-3 py-1.5 text-left text-[13px] text-gray-700 hover:bg-gray-50">{i}</button>
+                <button
+                  key={i}
+                  className="block w-full px-3 py-1.5 text-left text-[13px] text-gray-700 hover:bg-gray-50"
+                >
+                  {i}
+                </button>
               ))}
             </div>
           )}
         </div>
+      )}
       </div>
 
       <div className="flex items-center gap-1">

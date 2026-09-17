@@ -3,11 +3,39 @@ import { useEffect, useMemo, useState } from "react";
 import AppSidebar from "./AppSidebar";
 import AppHeader from "./AppHeader";
 import { createClient } from "@/lib/supabase/client";
+import { usePathname, useRouter } from "next/navigation";
 
 
 export default function CrmShell({ children }: { children: React.ReactNode }) {
+  const pathname = usePathname();
+  const router = useRouter();
   const supabase = useMemo(() => createClient(), []);
   const [sidebarOpen, setSidebarOpen] = useState(false);
+  const [userRole, setUserRole] = useState<string | null>(null);
+  useEffect(() => {
+  const loadUserRole = async () => {
+    const {
+      data: { user: authUser },
+    } = await supabase.auth.getUser();
+
+    if (!authUser) return;
+
+    const { data, error } = await supabase
+      .from("profiles")
+      .select("role")
+      .eq("id", authUser.id)
+      .maybeSingle();
+
+    if (error) {
+      console.error("Route guard role error:", error);
+      return;
+    }
+
+    setUserRole(data?.role || "user");
+  };
+
+  loadUserRole();
+}, [supabase]);
 
   useEffect(() => {
   const applyTheme = (mode: "light" | "dark" | "system") => {

@@ -10,6 +10,7 @@ import { CheckCircle2, Eye, Pencil, Plus, X } from "lucide-react";
 export default function CustomersPage() {
   const [customers, setCustomers] = useState<Customer[]>([]);
   const supabase = useMemo(() => createClient(), []);
+  const [userRole, setUserRole] = useState("user");
 
   
   const [newCustomerOpen, setNewCustomerOpen] = useState(false);
@@ -27,6 +28,34 @@ const [groupFilter, setGroupFilter] = useState("all");
 const [dateFilter, setDateFilter] = useState<
   "all" | "today" | "7days" | "30days"
 >("all");
+
+useEffect(() => {
+  const loadUserRole = async () => {
+    const {
+      data: { user: authUser },
+    } = await supabase.auth.getUser();
+
+    if (!authUser) return;
+
+    const { data, error } = await supabase
+      .from("profiles")
+      .select("role")
+      .eq("id", authUser.id)
+      .maybeSingle();
+
+    if (error) {
+      console.error("Customer role error:", error);
+      return;
+    }
+
+    setUserRole(data?.role || "user");
+  };
+
+  loadUserRole();
+}, [supabase]);
+
+const hasFullAccess =
+userRole === "admin" || userRole === "sub_admin";
 
 useEffect(() => {
   const savedFilters = localStorage.getItem("customerFilters");
@@ -354,20 +383,28 @@ setTimeout(() => {
       render: (r) => (
         <div className="flex w-full items-center justify-center">
           <button
-            type="button"
-            onClick={() => toggleActive(r.id)}
-            className={`relative h-7 w-12 rounded-full transition-all duration-200 ${
-              r.active
-                ? "bg-blue-500 shadow-[0_4px_10px_rgba(59,130,246,0.30)]"
-                : "bg-gray-200"
+          type="button"
+          disabled={!hasFullAccess}
+          onClick={() => {
+            if (!hasFullAccess) return;
+            toggleActive(r.id);
+          }}
+          className={`relative h-7 w-12 rounded-full transition-all duration-200 ${
+            r.active
+              ? "bg-blue-500 shadow-[0_4px_10px_rgba(59,130,246,0.30)]"
+              : "bg-gray-200"
+          } ${
+            hasFullAccess
+              ? "cursor-pointer"
+              : "cursor-not-allowed opacity-60"
+          }`}
+        >
+          <span
+            className={`absolute left-1 top-1/2 h-5 w-5 -translate-y-1/2 rounded-full bg-white shadow-sm transition-transform duration-200 ${
+              r.active ? "translate-x-5" : "translate-x-0"
             }`}
-          >
-            <span
-              className={`absolute left-1 top-1/2 h-5 w-5 -translate-y-1/2 rounded-full bg-white shadow-sm transition-transform duration-200 ${
-                r.active ? "translate-x-5" : "translate-x-0"
-              }`}
-            />
-          </button>
+          />
+        </button>
         </div>
       ),
     },
@@ -389,26 +426,33 @@ setTimeout(() => {
                   </button>
 
                   <button
-                    type="button"
-                    onClick={() => {
-                      setEditingCustomerId(String(customer.id));
+                      type="button"
+                      disabled={!hasFullAccess}
+                      onClick={() => {
+                        if (!hasFullAccess) return;
 
-                      setNewCustomer({
-                        name: customer.contact ?? "",
-                        company: customer.company ?? "",
-                        email: customer.email ?? "",
-                        phone: customer.phone ?? "",
-                        group_name: customer.group ?? "Fiverr",
-                        active: customer.active,
-                      });
+                        setEditingCustomerId(String(customer.id));
 
-                      setNewCustomerOpen(true);
-                    }}
-                    className="inline-flex items-center gap-1.5 rounded-md border border-gray-200 bg-white px-2.5 py-1.5 text-xs font-medium text-gray-700 transition hover:bg-gray-50"
-                  >
-                    <Pencil size={13} />
-                    Edit
-                  </button>
+                        setNewCustomer({
+                          name: customer.contact ?? "",
+                          company: customer.company ?? "",
+                          email: customer.email ?? "",
+                          phone: customer.phone ?? "",
+                          group_name: customer.group ?? "Fiverr",
+                          active: customer.active,
+                        });
+
+                        setNewCustomerOpen(true);
+                      }}
+                      className={`inline-flex items-center gap-1.5 rounded-md border px-2.5 py-1.5 text-xs font-medium transition ${
+                        hasFullAccess
+                          ? "border-gray-200 bg-white text-gray-700 hover:bg-gray-50"
+                          : "cursor-not-allowed border-gray-200 bg-gray-50 text-gray-400"
+                      }`}
+                    >
+                      <Pencil size={13} />
+                      Edit
+                    </button>
                 </div>
               ),
             },
@@ -471,10 +515,18 @@ setTimeout(() => {
         }
         actions={
           <button
-            type="button"
-            onClick={() => setNewCustomerOpen(true)}
-            className="flex items-center gap-1.5 rounded-md bg-brand px-3 py-2 text-[13px] font-semibold text-white transition hover:opacity-90"
-          >
+          type="button"
+          disabled={!hasFullAccess}
+          onClick={() => {
+            if (!hasFullAccess) return;
+            setNewCustomerOpen(true);
+          }}
+          className={`flex items-center gap-1.5 rounded-md px-3 py-2 text-[13px] font-semibold text-white transition ${
+            hasFullAccess
+              ? "bg-brand hover:opacity-90"
+              : "cursor-not-allowed bg-brand/50"
+          }`}
+        >
             <Plus size={15} />
             New Customer
           </button>
@@ -859,7 +911,10 @@ setTimeout(() => {
           selectable
           bulkActions
           onRefresh={loadCustomers}
-          onBulkAction={handleBulkAction}
+          onBulkAction={(action, selectedRows) => {
+          if (!hasFullAccess) return;
+          handleBulkAction(action, selectedRows);
+        }}
           activeFilterCount={activeFilterCount}
           columnVisibilityKey="customers-table-columns" 
           filterContent={
