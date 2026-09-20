@@ -25,6 +25,7 @@ const [timeLogForm, setTimeLogForm] = useState({
   note: "",
 });
   const [currentUserId, setCurrentUserId] = useState<string | null>(null);
+  const [userRole, setUserRole] = useState("user");
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
   const [copied, setCopied] = useState(false);
@@ -38,6 +39,19 @@ const [timeLogForm, setTimeLogForm] = useState({
 } = await supabase.auth.getUser();
 
 setCurrentUserId(user?.id ?? null);
+if (user) {
+  const { data: profile, error: roleError } = await supabase
+    .from("profiles")
+    .select("role")
+    .eq("id", user.id)
+    .maybeSingle();
+
+  if (roleError) {
+    console.error("Project details role error:", roleError);
+  } else {
+    setUserRole(profile?.role || "user");
+  }
+}
 
       setLoading(true);
       setError("");
@@ -131,6 +145,8 @@ setCurrentUserId(user?.id ?? null);
 
     loadProject();
   }, [projectCode, supabase]);
+  const hasFullAccess =
+  userRole === "admin" || userRole === "sub_admin";
 
   const handleCopyLink = async () => {
     await navigator.clipboard.writeText(window.location.href);
@@ -408,14 +424,22 @@ const timeProgress =
       </div>
 
       <div className="flex items-center gap-2">
-        {currentUserId === project.user_id && (
         <a
-          href={`/projects/new?id=${project.id}`}
-          className="rounded-lg border border-gray-200 bg-white px-4 py-2 text-sm font-semibold text-gray-700 transition hover:bg-gray-50"
+          href={hasFullAccess ? `/projects/new?id=${project.id}` : "#"}
+          onClick={(e) => {
+            if (!hasFullAccess) {
+              e.preventDefault();
+            }
+          }}
+          aria-disabled={!hasFullAccess}
+          className={`rounded-lg border px-4 py-2 text-sm font-semibold transition ${
+            hasFullAccess
+              ? "border-gray-200 bg-white text-gray-700 hover:bg-gray-50"
+              : "cursor-not-allowed border-gray-200 bg-gray-50 text-gray-400"
+          }`}
         >
           Edit Project
         </a>
-      )}
 
         <button
           type="button"
@@ -775,12 +799,20 @@ const timeProgress =
             </span>
 
             <button
-              type="button"
-              onClick={() => setShowTimeLogForm(true)}
-              className="rounded-lg bg-blue-600 px-3 py-1.5 text-xs font-semibold text-white hover:bg-blue-700"
-            >
-              + Log Time
-            </button>
+            type="button"
+            disabled={!hasFullAccess}
+            onClick={() => {
+              if (!hasFullAccess) return;
+              setShowTimeLogForm(true);
+            }}
+            className={`rounded-lg px-3 py-1.5 text-xs font-semibold text-white transition ${
+              hasFullAccess
+                ? "bg-blue-600 hover:bg-blue-700"
+                : "cursor-not-allowed bg-blue-600/50"
+            }`}
+          >
+            + Log Time
+          </button>
           </div>
           </div>
 

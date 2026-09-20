@@ -10,6 +10,7 @@ import Link from "next/link";
 
 export default function TasksPage() {
   const supabase = useMemo(() => createClient(), []);
+  const [userRole, setUserRole] = useState("user");
  const [tasks, setTasks] = useState<Task[]>([]);
   const [statusFilter, setStatusFilter] = useState<string | null>(null);
 
@@ -42,11 +43,28 @@ useEffect(() => {
     } = await supabase.auth.getUser();
 
     setCurrentUserId(user?.id ?? null);
+    if (!user) {
+  setUserRole("user");
+  return;
+}
+
+const { data: profile, error: roleError } = await supabase
+  .from("profiles")
+  .select("role")
+  .eq("id", user.id)
+  .maybeSingle();
+
+if (roleError) {
+  console.error("Task role error:", roleError);
+} else {
+  setUserRole(profile?.role || "user");
+}
   };
 
   loadCurrentUser();
 }, [supabase]);
-
+const hasFullAccess =
+  userRole === "admin" || userRole === "sub_admin";
 
 useEffect(() => {
   const loadProjects = async () => {
@@ -339,10 +357,22 @@ const updateProjectProgressFromTasks = async (projectId: string) => {
       render: (r) => (
         <select
           value={r.status}
-          onChange={(e) => setStatus(r.id, e.target.value as Task["status"])}
-          className="rounded-md border border-border-subtle bg-white px-2 py-1 text-xs outline-none"
+          disabled={!hasFullAccess}
+          onChange={(e) => {
+            if (!hasFullAccess) return;
+            setStatus(r.id, e.target.value as Task["status"]);
+          }}
+          className={`rounded-md border border-border-subtle bg-white px-2 py-1 text-xs outline-none ${
+            hasFullAccess
+              ? "cursor-pointer"
+              : "cursor-not-allowed opacity-60"
+          }`}
         >
-          {statusOptions.map((s) => <option key={s} value={s}>{s}</option>)}
+          {statusOptions.map((s) => (
+            <option key={s} value={s}>
+              {s}
+            </option>
+          ))}
         </select>
       ),
     },
@@ -361,27 +391,38 @@ const updateProjectProgressFromTasks = async (projectId: string) => {
   header: "Actions",
   render: (task) => (
     <button
-      type="button"
-      onClick={() => {
-        setEditingTaskId(String(task.id));
+  type="button"
+  disabled={!hasFullAccess}
+  onClick={() => {
+    if (!hasFullAccess) return;
 
-        setNewTask({
-          name: task.name,
-          project_id: task.project,
-          status: task.status,
-          start_date: task.startDate,
-          due_date: task.dueDate,
-          assigned_to: task.assignedToId ?? "",
-          priority: task.priority,
-        });
+    setEditingTaskId(String(task.id));
 
-        setNewTaskOpen(true);
-      }}
-      className="inline-flex items-center gap-1.5 rounded-md border border-gray-200 bg-white px-2.5 py-1.5 text-xs font-medium text-gray-700 transition hover:bg-gray-50"
-    >
-      <Pencil size={13} />
-      Edit
-    </button>
+    setNewTask({
+      name: task.name ?? "",
+      project_id:
+  (task as any).project_id ?? (task as any).projectId ?? "",
+  status: task.status ?? "Not Started",
+  start_date:
+  (task as any).start_date ?? (task as any).startDate ?? "",
+  due_date:
+  (task as any).due_date ?? (task as any).dueDate ?? "",
+  assigned_to:
+  (task as any).assigned_to ?? (task as any).assignedTo ?? "",
+      priority: task.priority ?? "Medium",
+    });
+
+    setNewTaskOpen(true);
+  }}
+  className={`inline-flex items-center gap-1.5 rounded-md border px-2.5 py-1.5 text-xs font-medium transition ${
+    hasFullAccess
+      ? "border-gray-200 bg-white text-gray-700 hover:bg-gray-50"
+      : "cursor-not-allowed border-gray-200 bg-gray-50 text-gray-400"
+  }`}
+>
+  <Pencil size={13} />
+  Edit
+</button>
   ),
 },
   ];
@@ -397,10 +438,18 @@ const updateProjectProgressFromTasks = async (projectId: string) => {
     }
     actions={
       <button
-        type="button"
-        onClick={() => setNewTaskOpen(true)}
-        className="flex items-center gap-1.5 rounded-md bg-brand px-3 py-2 text-[13px] font-semibold text-white transition hover:opacity-90"
-      >
+  type="button"
+  disabled={!hasFullAccess}
+  onClick={() => {
+    if (!hasFullAccess) return;
+    setNewTaskOpen(true);
+  }}
+  className={`flex items-center gap-1.5 rounded-md px-3 py-2 text-[13px] font-semibold text-white transition ${
+    hasFullAccess
+      ? "bg-brand hover:opacity-90"
+      : "cursor-not-allowed bg-brand/50"
+  }`}
+>
         <Plus size={15} />
         New Task
       </button>
@@ -656,7 +705,13 @@ const updateProjectProgressFromTasks = async (projectId: string) => {
           </button>
         ))}
       </div>
-      <DataTable columns={columns} rows={rows} searchKeys={["name", "assignedTo"]} selectable bulkActions />
+      <DataTable
+  columns={columns}
+  rows={rows}
+  searchKeys={["name", "assignedTo"]}
+  selectable
+  bulkActions={hasFullAccess}
+/>
     </div>
   );
 }

@@ -63,6 +63,7 @@ const statuses: {
 
 export default function ProjectsPage() {
   const supabase = useMemo(() => createClient(), []);
+  const [userRole, setUserRole] = useState("user");
 
   const [projects, setProjects] = useState<ProjectRow[]>([]);
 
@@ -78,6 +79,33 @@ export default function ProjectsPage() {
 
   const [error, setError] = useState("");
 
+useEffect(() => {
+  const loadUserRole = async () => {
+    const {
+      data: { user: authUser },
+    } = await supabase.auth.getUser();
+
+    if (!authUser) return;
+
+    const { data, error } = await supabase
+      .from("profiles")
+      .select("role")
+      .eq("id", authUser.id)
+      .maybeSingle();
+
+    if (error) {
+      console.error("Project role error:", error);
+      return;
+    }
+
+    setUserRole(data?.role || "user");
+  };
+
+  loadUserRole();
+}, [supabase]);
+
+const hasFullAccess =
+userRole === "admin" || userRole === "sub_admin";
 
   /* ----------------------------
      LOAD PROJECTS
@@ -337,36 +365,28 @@ const handleSaveEdit = async () => {
 
       render: (project) => (
         <select
-          value={project.status}
-          onChange={(e) =>
-            handleStatusChange(
-              project.id,
-              e.target.value as ProjectStatus
-            )
-          }
-          className="
-            rounded-md
-            border
-            border-border-subtle
-            bg-white
-            px-2
-            py-1.5
-            text-[12px]
-            font-medium
-            text-gray-700
-            outline-none
-            focus:border-brand
-          "
-        >
-          {statuses.map((status) => (
-            <option
-              key={status.value}
-              value={status.value}
-            >
-              {status.label}
-            </option>
-          ))}
-        </select>
+  value={project.status}
+  disabled={!hasFullAccess}
+  onChange={(e) => {
+    if (!hasFullAccess) return;
+
+    handleStatusChange(
+      project.id,
+      e.target.value as ProjectStatus
+    );
+  }}
+  className={`rounded-md border border-border-subtle bg-white px-2 py-1.5 text-[12px] font-medium text-gray-700 outline-none focus:border-brand ${
+    hasFullAccess
+      ? "cursor-pointer"
+      : "cursor-not-allowed opacity-60"
+  }`}
+>
+  {statuses.map((status) => (
+    <option key={status.value} value={status.value}>
+      {status.label}
+    </option>
+  ))}
+</select>
       ),
     },
       {
@@ -374,8 +394,22 @@ const handleSaveEdit = async () => {
     header: "Actions",
     render: (project) => (
       <Link
-  href={`/projects/new?id=${project.id}`}
-  className="inline-flex items-center gap-1.5 rounded-md border border-gray-200 bg-white px-2.5 py-1.5 text-xs font-medium text-gray-700 transition hover:bg-gray-50"
+  href={
+    hasFullAccess
+      ? `/projects/new?id=${project.id}`
+      : "#"
+  }
+  onClick={(e) => {
+    if (!hasFullAccess) {
+      e.preventDefault();
+    }
+  }}
+  aria-disabled={!hasFullAccess}
+  className={`inline-flex items-center gap-1.5 rounded-md border px-2.5 py-1.5 text-xs font-medium transition ${
+    hasFullAccess
+      ? "border-gray-200 bg-white text-gray-700 hover:bg-gray-50"
+      : "cursor-not-allowed border-gray-200 bg-gray-50 text-gray-400"
+  }`}
 >
   <Pencil size={13} />
   Edit
@@ -391,8 +425,18 @@ const handleSaveEdit = async () => {
         actions={
           <>
             <Link
-              href="/projects/new"
-              className="flex items-center gap-1.5 rounded-md bg-brand px-3 py-2 text-[13px] font-semibold text-white hover:opacity-90"
+              href={hasFullAccess ? "/projects/new" : "#"}
+              onClick={(e) => {
+                if (!hasFullAccess) {
+                  e.preventDefault();
+                }
+              }}
+              aria-disabled={!hasFullAccess}
+              className={`flex items-center gap-1.5 rounded-md px-3 py-2 text-[13px] font-semibold text-white transition ${
+                hasFullAccess
+                  ? "bg-brand hover:opacity-90"
+                  : "cursor-not-allowed bg-brand/50"
+              }`}
             >
               <Plus size={15} />
               New Project
