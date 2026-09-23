@@ -156,15 +156,9 @@ const projects = Array.from(
 const normalizedQuery = query.toLowerCase();
 
 const pageResults = globalPages
-  .filter((item) => {
-    if (!hasFullAccess && item.href !== "/projects") {
-      return false;
-    }
-
-    return item.title
-      .toLowerCase()
-      .includes(normalizedQuery);
-  })
+  .filter((item) =>
+    item.title.toLowerCase().includes(normalizedQuery)
+  )
   .map((item) => ({
     type: item.type,
     title: item.title,

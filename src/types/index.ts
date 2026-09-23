@@ -41,7 +41,7 @@ export interface Ticket {
 
 export interface Invoice {
   id: string; customer: string; amount: string; tax: string; date: string; dueDate: string;
-  status: "Draft" | "Not Sent" | "Unpaid" | "Partially Paid" | "Overdue" | "Paid";
+  status: "Draft" | "Sent" | "Paid" | "Partially Paid" | "Overdue" | "Cancelled";
 }
 
 export interface Estimate {

@@ -1,6 +1,13 @@
 import { Invoice, Estimate, Proposal, Payment, Item } from "@/types";
 
-const invStatuses: Invoice["status"][] = ["Draft", "Not Sent", "Unpaid", "Partially Paid", "Overdue", "Paid"];
+const invStatuses: Invoice["status"][] = [
+  "Draft",
+  "Sent",
+  "Paid",
+  "Partially Paid",
+  "Overdue",
+  "Cancelled",
+];
 export const invoices: Invoice[] = Array.from({ length: 14 }).map((_, i) => ({
   id: `INV-${1000 + i}`,
   customer: ["elvan_tw", "tawhid_wp", "figma_flows", "arif_pro"][i % 4],

@@ -1,4 +1,6 @@
 "use client";
+import { useEffect, useMemo, useState } from "react";
+import { createClient } from "@/lib/supabase/client";
 import PageHeader from "@/components/ui/PageHeader";
 import DataTable from "@/components/ui/DataTable";
 import StatusBadge from "@/components/ui/StatusBadge";
@@ -16,10 +18,57 @@ const columns: Column<Estimate>[] = [
 ];
 
 export default function EstimatesPage() {
+  const supabase = useMemo(() => createClient(), []);
+  const [userRole, setUserRole] = useState("user");
+
+    useEffect(() => {
+    const loadUserRole = async () => {
+      const {
+        data: { user },
+      } = await supabase.auth.getUser();
+
+      if (!user) return;
+
+      const { data, error } = await supabase
+        .from("profiles")
+        .select("role")
+        .eq("id", user.id)
+        .maybeSingle();
+
+      if (error) {
+        console.error("Estimate role error:", error);
+        return;
+      }
+
+      setUserRole(data?.role || "user");
+    };
+
+    loadUserRole();
+  }, [supabase]);
+
+  const hasFullAccess =
+    userRole === "admin" || userRole === "sub_admin";
+
   return (
     <div>
-      <PageHeader title="Estimates" actions={<NewRecordButton label="New Estimate" fields={["Customer", "Amount", "Expiry Date"]} />} />
-      <DataTable columns={columns} rows={estimates} searchKeys={["customer"]} selectable bulkActions />
+      <PageHeader
+        title="Estimates"
+        actions={
+          hasFullAccess ? (
+            <NewRecordButton
+              label="New Estimate"
+              fields={["Customer", "Amount", "Expiry Date"]}
+            />
+          ) : undefined
+        }
+      />
+      <DataTable
+        columns={columns}
+        rows={estimates}
+        searchKeys={["customer"]}
+        selectable={hasFullAccess}
+        bulkActions={hasFullAccess}
+      />
     </div>
   );
 }
