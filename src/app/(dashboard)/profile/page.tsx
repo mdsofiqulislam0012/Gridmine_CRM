@@ -4,6 +4,7 @@ import Link from "next/link";
 import { useEffect, useMemo, useState } from "react";
 import {
   Pencil,
+  Camera,
   Mail,
   Phone,
   Briefcase,
@@ -49,10 +50,65 @@ export default function ProfilePage() {
   const [currentPage, setCurrentPage] = useState(1);
   const [activeProfileTab, setActiveProfileTab] = useState("team");
   const [isInviteOpen, setIsInviteOpen] = useState(false);
+  const [openMemberMenuId, setOpenMemberMenuId] = useState<string | null>(null);
+  const [roleEditMember, setRoleEditMember] = useState<TeamMember | null>(null);
+  const [removeMember, setRemoveMember] = useState<TeamMember | null>(null);
+  const [removeLoading, setRemoveLoading] = useState(false);
+  const [removeError, setRemoveError] = useState("");
+  const [roleEditValue, setRoleEditValue] = useState<
+  "admin" | "sub_admin" | "user"
+>("user");
+  const [roleEditLoading, setRoleEditLoading] = useState(false);
+  const [roleEditError, setRoleEditError] = useState("");
+  const [inviteFullName, setInviteFullName] = useState("");
   const [inviteEmail, setInviteEmail] = useState("");
   const [inviteRole, setInviteRole] = useState("user");
   const [inviteLoading, setInviteLoading] = useState(false);
   const [inviteError, setInviteError] = useState("");
+  const [inviteSuccess, setInviteSuccess] = useState("");
+
+  const [isEditingProfile, setIsEditingProfile] = useState(false);
+  const [profileSaveLoading, setProfileSaveLoading] = useState(false);
+  const [avatarFile, setAvatarFile] = useState<File | null>(null);
+  const [avatarUploading, setAvatarUploading] = useState(false);
+  const [avatarPreview, setAvatarPreview] = useState("");
+  const [profileSaveError, setProfileSaveError] = useState("");
+
+const [profileForm, setProfileForm] = useState({
+  email: "",
+  phone: "",
+  job_title: "",
+  bio: "",
+});
+
+useEffect(() => {
+  return () => {
+    if (avatarPreview) {
+      URL.revokeObjectURL(avatarPreview);
+    }
+  };
+}, [avatarPreview]);
+
+
+  useEffect(() => {
+  if (!inviteSuccess) return;
+
+  const timer = setTimeout(() => {
+    setInviteSuccess("");
+  }, 4000);
+
+  return () => clearTimeout(timer);
+}, [inviteSuccess]);
+
+useEffect(() => {
+  setProfileForm({
+    email: profile.email || "",
+    phone: profile.phone || "",
+    job_title: profile.job_title || "",
+    bio: profile.bio || "",
+  });
+}, [profile]);
+
   const membersPerPage = 8;
   useEffect(() => {
   setCurrentPage(1);
@@ -266,51 +322,359 @@ const teamStats = [
   },
 ];
 
+const handleAvatarUpload = async (file: File) => {
+  if (!currentUserId) return;
+
+  setAvatarUploading(true);
+  setProfileSaveError("");
+
+  try {
+    const filePath = `${currentUserId}/avatar`;
+
+    const { error: uploadError } = await supabase.storage
+      .from("avatars")
+      .upload(filePath, file, {
+        upsert: true,
+        contentType: file.type,
+      });
+
+    if (uploadError) {
+  setProfileSaveError(uploadError.message);
+  setAvatarPreview("");
+  setAvatarFile(null);
+  return;
+}
+
+    const {
+      data: { publicUrl },
+    } = supabase.storage.from("avatars").getPublicUrl(filePath);
+
+    const avatarUrl = `${publicUrl}?t=${Date.now()}`;
+
+    const { error: updateError } = await supabase
+      .from("profiles")
+      .update({
+        avatar_url: avatarUrl,
+        updated_at: new Date().toISOString(),
+      })
+      .eq("id", currentUserId);
+
+    if (updateError) {
+      setProfileSaveError(updateError.message);
+      return;
+    }
+
+    setProfile((current) => ({
+      ...current,
+      avatar_url: avatarUrl,
+    }));
+
+    setAvatarPreview("");
+    setAvatarFile(null);
+  } catch (error) {
+    console.error("Avatar upload error:", error);
+    setProfileSaveError("Unable to upload profile image.");
+  } finally {
+    setAvatarUploading(false);
+  }
+};
+
+const handleSaveProfile = async () => {
+  if (!currentUserId) return;
+
+  setProfileSaveError("");
+  setProfileSaveLoading(true);
+
+  try {
+    const { error: updateError } = await supabase
+      .from("profiles")
+      .update({
+        email: profileForm.email.trim(),
+        phone: profileForm.phone.trim(),
+        job_title: profileForm.job_title.trim(),
+        bio: profileForm.bio.trim(),
+      })
+      .eq("id", currentUserId);
+
+    if (updateError) {
+      setProfileSaveError(updateError.message);
+      return;
+    }
+
+    setProfile((prev) => ({
+      ...prev,
+      email: profileForm.email.trim(),
+      phone: profileForm.phone.trim(),
+      job_title: profileForm.job_title.trim(),
+      bio: profileForm.bio.trim(),
+    }));
+
+    setTeamMembers((members) =>
+      members.map((member) =>
+        member.id === currentUserId
+          ? {
+              ...member,
+              email: profileForm.email.trim(),
+              phone: profileForm.phone.trim(),
+              job_title: profileForm.job_title.trim(),
+            }
+          : member
+      )
+    );
+
+    setIsEditingProfile(false);
+  } catch (error) {
+  console.error("Avatar upload error:", error);
+  setProfileSaveError("Unable to upload profile image.");
+  setAvatarPreview("");
+  setAvatarFile(null);
+} finally {
+    setProfileSaveLoading(false);
+  }
+};
+
+const handleInviteMember = async () => {
+  setInviteError("");
+
+  const fullName = inviteFullName.trim();
+  const email = inviteEmail.trim();
+
+  if (!fullName) {
+  setInviteError("Full name is required.");
+  return;
+}
+
+  if (!email) {
+    setInviteError("Email address is required.");
+    return;
+  }
+
+  const emailPattern = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+
+if (!emailPattern.test(email)) {
+  setInviteError("Please enter a valid email address.");
+  return;
+}
+
+  setInviteLoading(true);
+
+  try {
+    const {
+      data: { session },
+    } = await supabase.auth.getSession();
+
+    if (!session?.access_token) {
+      setInviteError("Your session has expired. Please log in again.");
+      return;
+    }
+
+    const response = await fetch("/api/team/invite", {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        Authorization: `Bearer ${session.access_token}`,
+      },
+      body: JSON.stringify({
+      fullName,
+      email,
+      role: inviteRole,
+    }),
+    });
+
+    const result = await response.json();
+
+    if (!response.ok) {
+  setInviteError(result.error || "Unable to send invitation.");
+  return;
+}
+
+const { data: refreshedMembers, error: refreshError } = await supabase
+  .from("profiles")
+  .select(
+    "id, full_name, email, phone, job_title, avatar_url, role, last_seen_at"
+  )
+  .order("full_name", { ascending: true });
+
+if (!refreshError) {
+  setTeamMembers((refreshedMembers ?? []) as TeamMember[]);
+}
+setInviteSuccess(`Invitation sent to ${email}`);
+setInviteFullName("");
+setInviteEmail("");
+setInviteRole("user");
+setIsInviteOpen(false);
+
+  } catch (error) {
+    console.error("Invite member error:", error);
+    setInviteError("Something went wrong while sending the invitation.");
+  } finally {
+    setInviteLoading(false);
+  }
+};
+
+const handleRoleUpdate = async () => {
+  if (!roleEditMember) return;
+
+  setRoleEditError("");
+  setRoleEditLoading(true);
+
+  try {
+    const {
+      data: { session },
+    } = await supabase.auth.getSession();
+
+    if (!session?.access_token) {
+      setRoleEditError("Your session has expired. Please log in again.");
+      return;
+    }
+
+    const response = await fetch("/api/team/role", {
+      method: "PATCH",
+      headers: {
+        "Content-Type": "application/json",
+        Authorization: `Bearer ${session.access_token}`,
+      },
+      body: JSON.stringify({
+        memberId: roleEditMember.id,
+        role: roleEditValue,
+      }),
+    });
+
+    const result = await response.json();
+
+    if (!response.ok) {
+      setRoleEditError(result.error || "Unable to update member role.");
+      return;
+    }
+
+    setTeamMembers((members) =>
+      members.map((member) =>
+        member.id === roleEditMember.id
+          ? { ...member, role: roleEditValue }
+          : member
+      )
+    );
+
+    setRoleEditMember(null);
+    setOpenMemberMenuId(null);
+  } catch (error) {
+    console.error("Role update error:", error);
+    setRoleEditError("Something went wrong while updating the role.");
+  } finally {
+    setRoleEditLoading(false);
+  }
+};
+
+const handleRemoveMember = async () => {
+  if (!removeMember) return;
+
+  setRemoveError("");
+  setRemoveLoading(true);
+
+  try {
+    const {
+      data: { session },
+    } = await supabase.auth.getSession();
+
+    if (!session?.access_token) {
+      setRemoveError("Your session has expired. Please log in again.");
+      return;
+    }
+
+    const response = await fetch("/api/team/remove", {
+      method: "DELETE",
+      headers: {
+        "Content-Type": "application/json",
+        Authorization: `Bearer ${session.access_token}`,
+      },
+      body: JSON.stringify({
+        memberId: removeMember.id,
+      }),
+    });
+
+    const result = await response.json();
+
+    if (!response.ok) {
+      setRemoveError(result.error || "Unable to remove team member.");
+      return;
+    }
+
+    setTeamMembers((members) =>
+      members.filter((member) => member.id !== removeMember.id)
+    );
+
+    setRemoveMember(null);
+    setOpenMemberMenuId(null);
+  } catch (error) {
+    console.error("Remove member error:", error);
+    setRemoveError("Something went wrong while removing the member.");
+  } finally {
+    setRemoveLoading(false);
+  }
+};  
+
 const teamOverviewCard = (
-  <div className="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm dark:border-slate-800 dark:bg-slate-900">
+  <div className="h-[255px] overflow-hidden rounded-2xl border border-slate-700/70 bg-slate-900/60 p-4">
+    {/* Header */}
     <div className="flex items-start justify-between">
       <div>
-        <p className="text-sm font-semibold text-slate-900 dark:text-white">
-          Team Overview
-        </p>
+        <h3 className="text-[17px] font-bold leading-tight text-white">
+        Team Overview
+      </h3>
 
-        <p className="mt-1 text-xs text-slate-500">
-          Members and role distribution
-        </p>
+      <p className="mt-0.5 text-[12px] leading-4 text-slate-400">
+        Total employees and their roles
+      </p>
       </div>
 
-      <div className="text-right">
-        <p className="text-3xl font-bold text-slate-900 dark:text-white">
-          {totalMembers}
-        </p>
-
-        <p className="text-xs text-slate-500">
-          Total Members
-        </p>
+      <div className="flex h-11 w-11 items-center justify-center rounded-xl border border-slate-700 bg-slate-800/70 text-lg text-violet-300">
+        ♙
       </div>
     </div>
 
-    <div className="mt-5 grid grid-cols-3 gap-3">
-      {teamStats.map((stat) => (
-        <div
-          key={stat.label}
-          className="rounded-xl border border-slate-200 p-3 dark:border-slate-800"
-        >
-          <p className="text-xl font-bold text-slate-900 dark:text-white">
-            {stat.value}
-          </p>
+    {/* Total Members */}
+    <div className="mt-2 flex h-[62px] items-center justify-between rounded-[14px] border border-slate-700/60 bg-gradient-to-r from-slate-800/90 to-slate-800/60 px-4 shadow-inner">
+      <p className="text-3xl font-bold text-white">
+        {teamMembers.length}
+      </p>
 
-          <p className="mt-1 text-xs text-slate-500">
-            {stat.label}
-          </p>
-        </div>
-      ))}
-    </div>
-
-    <div className="mt-4 flex items-center gap-2 text-xs text-slate-500">
+      <div className="flex items-center gap-2 text-xs text-slate-400">
       <span className="h-2 w-2 rounded-full bg-emerald-500" />
       <span>{activeMemberCount} active now</span>
+      </div>
+      </div>
+
+    {/* Role Cards */}
+    <div className="mt-2 grid grid-cols-3 gap-3">
+      <div className="rounded-xl border border-violet-500/50 bg-violet-500/15 p-4 text-center">
+        <p className="text-xl font-bold text-white">
+          {adminCount}
+        </p>
+        <p className="mt-1 text-sm text-violet-300">
+          Admin
+        </p>
+      </div>
+
+      <div className="rounded-xl border border-blue-500/50 bg-blue-500/15 p-4 text-center">
+        <p className="text-xl font-bold text-white">
+          {subAdminCount}
+        </p>
+        <p className="mt-1 text-sm text-blue-300">
+          Sub Admins
+        </p>
+      </div>
+
+      <div className="rounded-xl border border-emerald-500/50 bg-emerald-500/15 p-4 text-center">
+        <p className="text-xl font-bold text-white">
+          {employeeCount}
+        </p>
+        <p className="mt-1 text-sm text-emerald-300">
+          Employees
+        </p>
+      </div>
     </div>
+
+    {/* Active */}
   </div>
 );
 
@@ -323,8 +687,8 @@ const teamOverviewCard = (
   }
 
   return (
-  <div className="profile-page-enter min-h-[calc(100vh-60px)] bg-[rgba(247,248,252,1)] px-5 py-8 md:px-8 md:py-10 profile-theme-page">
-    <div className="mx-auto grid max-w-7xl grid-cols-1 gap-5 lg:grid-cols-[minmax(0,2fr)_minmax(320px,1fr)]">
+  <div className="min-h-[calc(100vh-60px)] w-full bg-[rgba(247,248,252,1)] px-5 pt-3 pb-6 md:px-6 lg:px-7 profile-theme-page">
+    <div className="grid w-full grid-cols-1 gap-4 lg:grid-cols-[minmax(0,1.9fr)_minmax(340px,1fr)]">
 
       {/* Error */}
       {error && (
@@ -350,7 +714,7 @@ const teamOverviewCard = (
           <span className="font-medium text-slate-200">Profile</span>
         </div>
       </div>
-        <div className="team-overview-section lg:col-start-2 lg:row-start-2">
+        <div className="team-overview-section self-start lg:col-start-2 lg:row-start-2">
           {teamOverviewCard}
         </div>
 
@@ -377,6 +741,19 @@ const teamOverviewCard = (
         </button>
       </div>
       <div className="mt-6 space-y-4">
+      <div>
+  <label className="mb-2 block text-sm font-medium text-slate-300">
+    Full Name
+  </label>
+
+  <input
+    type="text"
+    value={inviteFullName}
+    onChange={(e) => setInviteFullName(e.target.value)}
+    placeholder="Enter member name"
+    className="h-11 w-full rounded-lg border border-slate-700 bg-slate-900 px-3 text-sm text-white outline-none placeholder:text-slate-500 focus:border-violet-500"
+  />
+</div>
   <div>
     <label className="mb-2 block text-sm font-medium text-slate-300">
       Email Address
@@ -402,8 +779,12 @@ const teamOverviewCard = (
       className="h-11 w-full rounded-lg border border-slate-700 bg-slate-900 px-3 text-sm text-slate-300 outline-none focus:border-violet-500"
     >
       <option value="user">Employee</option>
-      <option value="sub_admin">Sub Admin</option>
-      <option value="admin">Admin</option>
+      {currentMember?.role === "admin" && (
+        <>
+          <option value="sub_admin">Sub Admin</option>
+          <option value="admin">Admin</option>
+        </>
+      )}
     </select>
   </div>
 
@@ -412,21 +793,202 @@ const teamOverviewCard = (
       {inviteError}
     </p>
   )}
+
+  <div className="mt-6 flex items-center justify-end gap-3">
+  <button
+    type="button"
+    onClick={() => setIsInviteOpen(false)}
+    className="h-10 rounded-lg border border-slate-700 px-4 text-sm font-medium text-slate-300 transition hover:bg-slate-800"
+  >
+    Cancel
+  </button>
+
+  <button
+    type="button"
+    onClick={handleInviteMember}
+    disabled={inviteLoading}
+    className="h-10 rounded-lg bg-violet-600 px-4 text-sm font-medium text-white transition hover:bg-violet-500 disabled:cursor-not-allowed disabled:opacity-50"
+  >
+    {inviteLoading ? "Sending..." : "Send Invite"}
+  </button>
+</div>
 </div>
     </div>
   </div>
 )}
 
-      {/* 3D PROFILE CARD */}
-      <div className="order-3 mt-1 flex items-center gap-6 border-b border-slate-800 lg:col-span-2 lg:row-start-3">
+{roleEditMember && (
+  <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 p-4 backdrop-blur-sm">
+    <div className="w-full max-w-md rounded-2xl border border-slate-800 bg-slate-950 p-6 shadow-2xl">
+      <div className="flex items-start justify-between">
+        <div>
+          <h2 className="text-lg font-semibold text-white">
+            Change Member Role
+          </h2>
+
+          <p className="mt-1 text-sm text-slate-400">
+            Update the role for{" "}
+            <span className="font-medium text-slate-200">
+              {roleEditMember.full_name || roleEditMember.email}
+            </span>
+          </p>
+        </div>
+
+        <button
+          type="button"
+          onClick={() => setRoleEditMember(null)}
+          className="flex h-8 w-8 items-center justify-center rounded-lg text-xl text-slate-400 transition hover:bg-slate-800 hover:text-white"
+        >
+          ×
+        </button>
+      </div>
+
+      <div className="mt-6">
+        <label className="mb-2 block text-sm font-medium text-slate-300">
+          Role
+        </label>
+
+        <select
+          value={roleEditValue}
+          onChange={(e) =>
+          setRoleEditValue(
+            e.target.value as "admin" | "sub_admin" | "user"
+          )
+        }
+          className="h-11 w-full rounded-lg border border-slate-700 bg-slate-900 px-3 text-sm text-slate-300 outline-none focus:border-violet-500"
+        >
+          <option value="user">Employee</option>
+          {currentMember?.role === "admin" && (
+            <>
+              <option value="sub_admin">Sub Admin</option>
+              <option value="admin">Admin</option>
+            </>
+          )}
+        </select>
+      </div>
+
+      {roleEditError && (
+        <p className="mt-4 text-sm text-red-400">
+          {roleEditError}
+        </p>
+      )}
+      <div className="mt-6 flex justify-end gap-3">
+        <button
+          type="button"
+          onClick={() => setRoleEditMember(null)}
+          className="h-10 rounded-lg border border-slate-700 px-4 text-sm font-medium text-slate-300 transition hover:bg-slate-800"
+        >
+          Cancel
+        </button>
+
+        <button
+        type="button"
+        onClick={handleRoleUpdate}
+        disabled={roleEditLoading}
+        className="h-10 rounded-lg bg-violet-600 px-4 text-sm font-medium text-white transition hover:bg-violet-500 disabled:cursor-not-allowed disabled:opacity-50"
+      >
+        {roleEditLoading ? "Saving..." : "Save Role"}
+      </button>
+      </div>
+    </div>
+  </div>
+)}
+
+{removeMember && (
+  <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 p-4 backdrop-blur-sm">
+    <div className="w-full max-w-md rounded-2xl border border-slate-800 bg-slate-950 p-6 shadow-2xl">
+      <div className="flex items-start justify-between">
+        <div>
+          <h2 className="text-lg font-semibold text-white">
+            Remove Team Member
+          </h2>
+
+          <p className="mt-2 text-sm text-slate-400">
+            Are you sure you want to remove{" "}
+            <span className="font-medium text-white">
+              {removeMember.full_name || removeMember.email}
+            </span>
+            ?
+          </p>
+
+          <p className="mt-2 text-sm text-red-400">
+            Their CRM access and login account will be removed. They will need
+            a new invitation to access the CRM again.
+          </p>
+        </div>
+
+        <button
+          type="button"
+          onClick={() => {
+            setRemoveMember(null);
+            setRemoveError("");
+          }}
+          className="flex h-8 w-8 items-center justify-center rounded-lg text-xl text-slate-400 transition hover:bg-slate-800 hover:text-white"
+        >
+          ×
+        </button>
+      </div>
+
+      {removeError && (
+        <p className="mt-4 text-sm text-red-400">
+          {removeError}
+        </p>
+      )}
+
+      <div className="mt-6 flex justify-end gap-3">
+        <button
+          type="button"
+          onClick={() => {
+            setRemoveMember(null);
+            setRemoveError("");
+          }}
+          className="h-10 rounded-lg border border-slate-700 px-4 text-sm font-medium text-slate-300 transition hover:bg-slate-800"
+        >
+          Cancel
+        </button>
+
+        <button
+          type="button"
+          onClick={handleRemoveMember}
+          disabled={removeLoading}
+          className="h-10 rounded-lg bg-red-600 px-4 text-sm font-medium text-white transition hover:bg-red-500 disabled:cursor-not-allowed disabled:opacity-50"
+        >
+          {removeLoading ? "Removing..." : "Remove Member"}
+        </button>
+      </div>
+    </div>
+  </div>
+)}
+  {inviteSuccess && (
+    <div className="fixed bottom-6 right-6 z-[60] w-[320px] rounded-xl border border-emerald-500/20 bg-slate-950 px-4 py-3 shadow-2xl">
+      <div className="flex items-start gap-3">
+        <div className="mt-0.5 flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-emerald-500/15 text-emerald-400">
+          ✓
+        </div>
+
+        <div>
+          <p className="text-sm font-semibold text-white">
+            Invitation sent
+          </p>
+
+          <p className="mt-1 text-xs text-slate-400">
+            {inviteSuccess}
+          </p>
+        </div>
+      </div>
+    </div>
+  )}
+
+    {/* 3D PROFILE CARD */}
+      <div className="order-3 -mt-2 flex items-center gap-1 border-b border-slate-800 lg:col-span-2 lg:row-start-3">
         <button
         type="button"
         onClick={() => setActiveProfileTab("team")}
-        className={`px-1 py-3 text-sm font-medium transition ${
-          activeProfileTab === "team"
-            ? "border-b-2 border-violet-500 text-violet-400"
-            : "text-slate-400 hover:text-white"
-        }`}
+        className={`flex h-12 items-center gap-2 border-b-2 px-4 text-sm font-medium transition ${
+        activeProfileTab === "team"
+          ? "border-violet-500 text-violet-400"
+          : "border-transparent text-slate-400 hover:text-white"
+      }`}
       >
         Team Members
       </button>
@@ -468,7 +1030,7 @@ const teamOverviewCard = (
       </button>
       </div>
       {activeProfileTab === "team" && (
-      <div className="order-4 rounded-2xl border border-slate-800 bg-slate-900/40 p-5 lg:col-span-2 lg:row-start-4">
+      <div className="order-4 -mt-4 rounded-2xl border border-slate-800 bg-slate-900/40 p-5 lg:col-span-2 lg:row-start-4">
       <div className="flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
         <div>
           <h2 className="text-lg font-semibold text-white">
@@ -503,7 +1065,13 @@ const teamOverviewCard = (
           {canManageTeam && (
           <button
             type="button"
-            onClick={() => setIsInviteOpen(true)}
+            onClick={() => {
+            setInviteError("");
+            setInviteEmail("");
+            setInviteFullName("");
+            setInviteRole("user");
+            setIsInviteOpen(true);
+          }}
             className="h-10 whitespace-nowrap rounded-lg bg-violet-600 px-4 text-sm font-medium text-white transition hover:bg-violet-500"
           >
             + Invite Member
@@ -600,13 +1168,55 @@ const teamOverviewCard = (
         </span>
       </div>
 
-      <span className="text-center text-slate-400">
-      {isCurrentUser
-        ? "—"
-        : canManageTeam
-          ? "•••"
-          : "—"}
-    </span>
+      <div className="relative flex justify-center">
+        {isCurrentUser || !canManageTeam ? (
+          <span className="text-slate-500">—</span>
+        ) : (
+          <button
+            type="button"
+            onClick={() =>
+              setOpenMemberMenuId((currentId) =>
+                currentId === member.id ? null : member.id
+              )
+            }
+            className="flex h-8 w-8 items-center justify-center rounded-md text-slate-400 transition hover:bg-slate-800 hover:text-white"
+          >
+            •••
+          </button>
+          
+        )}
+        {openMemberMenuId === member.id && (
+        <div className="absolute right-0 top-9 z-50 w-40 overflow-hidden rounded-lg border border-slate-700 bg-slate-900 shadow-xl">
+          <button
+            type="button"
+            onClick={() => {
+              setRoleEditError("");
+              setRoleEditMember(member);
+              setRoleEditValue(member.role || "user");
+              setOpenMemberMenuId(null);
+            }}
+            className="block w-full px-3 py-2 text-left text-sm text-slate-300 transition hover:bg-slate-800 hover:text-white"
+          >
+            Change Role
+          </button>
+
+          {currentMember?.role === "admin" && (
+          <button
+            type="button"
+            onClick={() => {
+              setRemoveError("");
+              setRemoveMember(member);
+              setOpenMemberMenuId(null);
+            }}
+            className="block w-full px-3 py-2 text-left text-sm text-red-400 transition hover:bg-red-500/10"
+          >
+            Remove Member
+          </button>
+        )}
+        </div>
+      )}
+      </div>
+
     </div>
   );
 })}
@@ -701,9 +1311,9 @@ const teamOverviewCard = (
           <div className="pointer-events-none absolute bottom-0 left-1/3 h-56 w-72 rounded-full bg-[rgba(105,130,255,0.07)] blur-[80px]" />
 
           {/* PROFILE TOP */}
-          <div className="relative z-10 flex flex-col gap-6 px-7 pb-7 pt-8 md:flex-row md:items-center md:justify-between md:px-9 md:pb-8 md:pt-9">
+          <div className="relative z-10 flex flex-col gap-4 px-5 py-5 md:flex-row md:items-center md:justify-between md:px-6 md:py-5">
 
-            <div className="flex min-w-0 items-center gap-5">
+            <div className="flex min-w-0 items-center gap-4">
 
               {/* Avatar 3D */}
               <div className="relative shrink-0">
@@ -720,9 +1330,9 @@ const teamOverviewCard = (
                     backdrop-blur-xl
                   "
                 >
-                  {profile.avatar_url ? (
+                  {(avatarPreview || profile.avatar_url) ? (
                     <img
-                      src={profile.avatar_url}
+                      src={avatarPreview || profile.avatar_url || ""}
                       alt={profile.full_name || "Profile"}
                       className="h-full w-full object-cover"
                     />
@@ -735,96 +1345,195 @@ const teamOverviewCard = (
                       .toUpperCase() || "U"
                   )}
                 </div>
+                <button
+                type="button"
+                onClick={() => document.getElementById("avatar-upload")?.click()}
+                disabled={avatarUploading}
+                aria-label="Change profile photo"
+                title="Change profile photo"
+                className="
+                  absolute bottom-0 right-0
+                  flex h-9 w-9 items-center justify-center
+                  rounded-xl
+                  border-2 border-slate-900
+                  bg-violet-600
+                  text-white
+                  shadow-lg
+                  transition
+                  hover:bg-violet-500
+                "
+              >
+                {avatarUploading ? (
+                <span className="h-4 w-4 animate-spin rounded-full border-2 border-white/40 border-t-white" />
+              ) : (
+                <Camera size={16} />
+              )}
+              </button>
+              <input
+              id="avatar-upload"
+              type="file"
+              accept="image/*"
+              disabled={avatarUploading}
+              className="hidden"
+              onChange={(e) => {
+              const file = e.currentTarget.files?.[0];
+              e.currentTarget.value = "";
+
+              if (!file) return;
+              setProfileSaveError("");
+
+              if (!file.type.startsWith("image/")) {
+              setProfileSaveError("Please select a valid image file.");
+              return;
+            }
+
+            if (file.size > 5 * 1024 * 1024) {
+              setProfileSaveError("Profile image must be smaller than 5MB.");
+              return;
+            }
+
+              setAvatarFile(file);
+              setAvatarPreview(URL.createObjectURL(file));
+
+              handleAvatarUpload(file);
+            }}
+            />
               </div>
 
               {/* Name */}
+              {/* Profile Details */}
               <div className="min-w-0">
-                <h2 className="truncate text-[25px] font-extrabold tracking-[-0.025em] text-[rgba(30,24,48,0.96)]">
-                  {profile.full_name || "User"}
-                </h2>
+                <div className="flex flex-wrap items-center gap-3">
+                  <h2 className="truncate text-[25px] font-extrabold tracking-[-0.025em] text-white">
+                    {profile.full_name || "User"}
+                  </h2>
 
-                <div className="mt-2 inline-flex rounded-xl border border-[rgba(150,110,255,0.16)] bg-[rgba(157,111,255,0.11)] px-3 py-1.5 text-[12px] font-semibold text-[rgba(115,72,215,0.94)] shadow-[inset_0_1px_2px_rgba(255,255,255,0.85)]">
-                  {profile.job_title || "No job title"}
+                  <span className="rounded-full border border-violet-500/40 bg-violet-500/15 px-3 py-1 text-xs font-semibold text-violet-300">
+                    {currentMember?.role === "admin"
+                      ? "Admin"
+                      : currentMember?.role === "sub_admin"
+                        ? "Sub Admin"
+                        : "Employee"}
+                  </span>
+
+                  <span className="flex items-center gap-2 text-sm text-slate-300">
+                    <span className="h-2.5 w-2.5 rounded-full bg-emerald-400" />
+                    Online
+                  </span>
                 </div>
 
-                <p className="mt-2.5 break-all text-[13px] text-[rgba(91,83,116,0.72)]">
-                  {profile.email}
-                </p>
+                <div className="mt-2 space-y-1.5 text-[13px] text-slate-400">
+                  <div className="flex items-center gap-2">
+                    <Mail size={14} className="shrink-0 text-slate-400" />
+                    <span>{profile.email || "—"}</span>
+                  </div>
+
+                  <div className="flex items-center gap-2">
+                    <Phone size={14} className="shrink-0 text-slate-400" />
+                    <span>{profile.phone || "—"}</span>
+                  </div>
+
+                  <div className="text-slate-300">
+                    {profile.job_title || "—"}
+                  </div>
+                </div>
               </div>
             </div>
 
             {/* Reference Style Purple Button */}
-            <Link
-              href="/profile/edit"
+           <button
+              type="button"
+              onClick={() => {
+                if (isEditingProfile) {
+                  handleSaveProfile();
+                } else {
+                  setProfileSaveError("");
+                  setIsEditingProfile(true);
+                }
+              }}
+              disabled={profileSaveLoading}
               className="
                 inline-flex shrink-0 items-center justify-center gap-2
                 rounded-[15px]
-                border border-[rgba(255,255,255,0.24)]
-                bg-[linear-gradient(135deg,rgba(137,80,247,0.98),rgba(111,68,232,0.98))]
-                px-6 py-3
-                text-[14px] font-bold text-white
-                shadow-[0_16px_30px_rgba(124,76,232,0.30),inset_0_1px_2px_rgba(255,255,255,0.24)]
-                transition-all duration-300
-                hover:-translate-y-1
-                hover:scale-[1.02]
-                hover:shadow-[0_20px_38px_rgba(124,76,232,0.36)]
-                active:translate-y-0
+                border border-violet-500/40
+                bg-violet-500/15
+                px-4 py-2.5
+                text-sm font-semibold text-violet-300
+                transition
+                hover:bg-violet-500/20
+                disabled:cursor-not-allowed
+                disabled:opacity-50
               "
             >
               <Pencil size={16} />
-              Edit Profile
-            </Link>
+
+              {profileSaveLoading
+                ? "Saving..."
+                : isEditingProfile
+                  ? "Save Changes"
+                  : "Edit Profile"}
+            </button>
+            {isEditingProfile && (
+            <button
+              type="button"
+              disabled={profileSaveLoading}
+              onClick={() => {
+                setProfileForm({
+                  email: profile.email || "",
+                  phone: profile.phone || "",
+                  job_title: profile.job_title || "",
+                  bio: profile.bio || "",
+                });
+
+                setProfileSaveError("");
+                setIsEditingProfile(false);
+              }}
+              className="
+                ml-2
+                inline-flex items-center justify-center
+                rounded-[15px]
+                border border-slate-700
+                bg-slate-800/70
+                px-4 py-2.5
+                text-sm font-semibold text-slate-300
+                transition
+                hover:bg-slate-700
+                disabled:cursor-not-allowed
+                disabled:opacity-50
+              "
+            >
+              Cancel
+            </button>
+          )}
+            {profileSaveError && (
+            <p className="mt-2 text-sm font-medium text-red-400">
+              {profileSaveError}
+            </p>
+          )}
           </div>
 
           {/* INNER 3D PANEL */}
           <div className="relative z-10 px-5 pb-5 md:px-7 md:pb-7">
-            <div
-              className="
-                profile-info-panel
-                relative overflow-hidden rounded-[28px]
-                border border-[rgba(255,255,255,0.78)]
-                bg-[rgba(255,255,255,0.48)]
-                p-6
-                shadow-[0_20px_45px_rgba(91,69,151,0.10),inset_0_2px_3px_rgba(255,255,255,0.90)]
-                backdrop-blur-2xl
-                md:p-7
-              "
-            >
-
-              {/* Inner highlight */}
-              <div className="pointer-events-none absolute left-10 top-0 h-28 w-80 rounded-full bg-[rgba(255,255,255,0.58)] blur-3xl" />
-
-              <div className="relative z-10">
-                <h3 className="text-[19px] font-extrabold tracking-[-0.02em] text-[rgba(36,29,55,0.94)]">
-                  Personal Information
-                </h3>
-
-                <p className="mt-1 text-[12px] text-[rgba(104,93,128,0.68)]">
-                  Your contact and professional details
-                </p>
+            <div className="relative z-10">
 
                 {/* INFORMATION CARDS */}
-                <div className="mt-6 grid gap-4 md:grid-cols-2">
+                <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 xl:grid-cols-[1.18fr_1fr_1fr_1fr]">
 
                   {/* Email */}
                   <div
                     className="
-                      group relative overflow-hidden rounded-[22px]
-                      border border-[rgba(126,151,255,0.16)]
-                      bg-[linear-gradient(145deg,rgba(240,244,255,0.82),rgba(255,255,255,0.58))]
-                      p-5
-                      shadow-[0_13px_26px_rgba(79,105,205,0.08),inset_0_1px_2px_rgba(255,255,255,0.94)]
-                      transition-all duration-300
-                      hover:-translate-y-1
-                      hover:shadow-[0_18px_32px_rgba(79,105,205,0.13)]
-                    "
+                    group relative h-[76px] overflow-hidden rounded-[18px]
+                    border border-slate-700/70
+                    bg-slate-800/50
+                    px-4 py-3
+                    transition-all duration-300
+                    hover:border-slate-600"
                   >
-                    <div className="absolute -right-8 -top-8 h-24 w-24 rounded-full bg-[rgba(106,135,255,0.09)] blur-2xl" />
 
-                    <div className="relative">
+                    <div className="flex h-full items-center gap-3">
                       <div
                         className="
-                          mb-4 flex h-11 w-11 items-center justify-center rounded-[14px]
+                         flex h-10 w-10 shrink-0 items-center justify-center rounded-[12px]
                           border border-[rgba(255,255,255,0.72)]
                           bg-[linear-gradient(145deg,rgba(129,158,255,0.28),rgba(100,127,244,0.14))]
                           shadow-[0_8px_16px_rgba(87,114,219,0.13),inset_0_1px_2px_rgba(255,255,255,0.94)]
@@ -835,36 +1544,47 @@ const teamOverviewCard = (
                           className="text-[rgba(75,104,218,0.94)]"
                         />
                       </div>
-
+                      <div className="min-w-0">
                       <p className="text-[10px] font-bold uppercase tracking-[0.12em] text-[rgba(101,105,132,0.62)]">
                         Email Address
                       </p>
-
-                      <p className="mt-2 break-all text-[14px] font-semibold text-[rgba(35,36,55,0.94)]">
+                      {isEditingProfile ? (
+                      <input
+                        type="email"
+                        value={profileForm.email}
+                        onChange={(e) =>
+                          setProfileForm((prev) => ({
+                            ...prev,
+                            email: e.target.value,
+                          }))
+                        }
+                        className="mt-1 w-full rounded-lg border border-slate-700 bg-slate-950/60 px-2 py-1 text-[13px] font-semibold text-slate-200 outline-none focus:border-violet-500"
+                      />
+                    ) : (
+                      <p className="mt-1 whitespace-nowrap text-[13px] font-semibold text-slate-300">
                         {profile.email || "Not provided"}
                       </p>
+                    )}
                     </div>
+                  </div>
                   </div>
 
                   {/* Phone */}
                   <div
                     className="
-                      group relative overflow-hidden rounded-[22px]
-                      border border-[rgba(125,209,167,0.16)]
-                      bg-[linear-gradient(145deg,rgba(240,251,247,0.82),rgba(255,255,255,0.58))]
-                      p-5
-                      shadow-[0_13px_26px_rgba(64,159,112,0.07),inset_0_1px_2px_rgba(255,255,255,0.94)]
-                      transition-all duration-300
-                      hover:-translate-y-1
-                      hover:shadow-[0_18px_32px_rgba(64,159,112,0.12)]
-                    "
+                    group relative h-[76px] overflow-hidden rounded-[18px]
+                    border border-slate-700/70
+                    bg-slate-800/50
+                    px-4 py-3
+                    transition-all duration-300
+                    hover:border-slate-600
+                  "
                   >
-                    <div className="absolute -right-8 -top-8 h-24 w-24 rounded-full bg-[rgba(70,196,134,0.08)] blur-2xl" />
 
-                    <div className="relative">
+                    <div className="flex h-full items-center gap-3">
                       <div
                         className="
-                          mb-4 flex h-11 w-11 items-center justify-center rounded-[14px]
+                          flex h-10 w-10 shrink-0 items-center justify-center rounded-[12px]
                           border border-[rgba(255,255,255,0.72)]
                           bg-[linear-gradient(145deg,rgba(108,219,164,0.27),rgba(75,186,134,0.13))]
                           shadow-[0_8px_16px_rgba(62,169,119,0.11),inset_0_1px_2px_rgba(255,255,255,0.94)]
@@ -875,37 +1595,47 @@ const teamOverviewCard = (
                           className="text-[rgba(39,159,104,0.94)]"
                         />
                       </div>
-
+                      <div className="min-w-0">
                       <p className="text-[10px] font-bold uppercase tracking-[0.12em] text-[rgba(101,105,132,0.62)]">
                         Phone
                       </p>
 
-                      <p className="mt-2 text-[14px] font-semibold text-[rgba(35,36,55,0.94)]">
-                        {profile.phone || "Not provided"}
-                      </p>
+                      {isEditingProfile ? (
+                        <input
+                          type="text"
+                          value={profileForm.phone}
+                          onChange={(e) =>
+                            setProfileForm((prev) => ({
+                              ...prev,
+                              phone: e.target.value,
+                            }))
+                          }
+                          className="mt-1 w-full rounded-lg border border-slate-700 bg-slate-950/60 px-2 py-1 text-[13px] font-semibold text-slate-200 outline-none focus:border-violet-500"
+                        />
+                      ) : (
+                        <p className="mt-1 text-[13px] font-semibold text-slate-300">
+                          {profile.phone || "Not provided"}
+                        </p>
+                      )}
                     </div>
                   </div>
-
+                </div>
                   {/* Job Title */}
                   <div
                     className="
-                      group relative overflow-hidden rounded-[22px]
-                      border border-[rgba(239,178,120,0.17)]
-                      bg-[linear-gradient(145deg,rgba(255,247,238,0.82),rgba(255,255,255,0.58))]
-                      p-5
-                      shadow-[0_13px_26px_rgba(199,128,67,0.07),inset_0_1px_2px_rgba(255,255,255,0.94)]
-                      transition-all duration-300
-                      hover:-translate-y-1
-                      hover:shadow-[0_18px_32px_rgba(199,128,67,0.12)]
-                      md:col-span-2
-                    "
+                    group relative h-[76px] overflow-hidden rounded-[18px]
+                    border border-slate-700/70
+                    bg-slate-800/50
+                    px-4 py-3
+                    transition-all duration-300
+                    hover:border-slate-600                    "
                   >
                     <div className="absolute -right-8 -top-8 h-24 w-24 rounded-full bg-[rgba(241,154,83,0.08)] blur-2xl" />
 
-                    <div className="relative">
+                    <div className="flex h-full items-center gap-3">
                       <div
                         className="
-                          mb-4 flex h-11 w-11 items-center justify-center rounded-[14px]
+                          flex h-10 w-10 shrink-0 items-center justify-center rounded-[12px]
                           border border-[rgba(255,255,255,0.72)]
                           bg-[linear-gradient(145deg,rgba(255,183,122,0.28),rgba(239,138,69,0.13))]
                           shadow-[0_8px_16px_rgba(205,132,67,0.10),inset_0_1px_2px_rgba(255,255,255,0.94)]
@@ -916,59 +1646,75 @@ const teamOverviewCard = (
                           className="text-[rgba(220,116,48,0.94)]"
                         />
                       </div>
-
+                      <div className="min-w-0">
                       <p className="text-[10px] font-bold uppercase tracking-[0.12em] text-[rgba(101,105,132,0.62)]">
                         Job Title
                       </p>
 
-                      <p className="mt-2 text-[14px] font-semibold text-[rgba(35,36,55,0.94)]">
+                      {isEditingProfile ? (
+                      <input
+                        type="text"
+                        value={profileForm.job_title}
+                        onChange={(e) =>
+                          setProfileForm((prev) => ({
+                            ...prev,
+                            job_title: e.target.value,
+                          }))
+                        }
+                        className="mt-1 w-full rounded-lg border border-slate-700 bg-slate-950/60 px-2 py-1 text-[13px] font-semibold text-slate-200 outline-none focus:border-violet-500"
+                      />
+                    ) : (
+                      <p className="mt-1 text-[13px] font-semibold text-slate-300">
                         {profile.job_title || "Not provided"}
                       </p>
+                    )}
                     </div>
                   </div>
-
+                  </div>
+                <div
+                className="
+                profile-bio-card
+                relative h-[76px] overflow-hidden rounded-[18px]
+                border border-[rgba(187,146,239,0.17)]
+                bg-[linear-gradient(145deg,rgba(249,243,255,0.82),rgba(255,255,255,0.60))]
+                px-4 py-3
+                shadow-[0_13px_26px_rgba(139,91,199,0.07),inset_0_1px_2px_rgba(255,255,255,0.94)]">
+              <div className="absolute -right-10 -top-10 h-28 w-28 rounded-full bg-[rgba(168,108,239,0.08)] blur-2xl" />
+              <div className="flex h-full items-center gap-3">
+                <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-[14px] border border-cyan-500/20 bg-cyan-500/15 text-sm font-bold text-cyan-400"> i </div>
+              <div className="min-w-0">
+              <span className="text-[10px] font-bold uppercase tracking-[0.12em] text-slate-400">
+              Bio
+              </span>
+              {isEditingProfile ? (
+                <textarea
+                  value={profileForm.bio}
+                  onChange={(e) =>
+                    setProfileForm((prev) => ({
+                      ...prev,
+                      bio: e.target.value,
+                    }))
+                  }
+                  rows={3}
+                  className="mt-1 w-full resize-none rounded-lg border border-slate-700 bg-slate-950/60 px-3 py-2 text-[13px] text-slate-200 outline-none focus:border-violet-500"
+                />
+              ) : (
+                <p className="profile-bio-text mt-1 whitespace-pre-wrap text-[14px] leading-7 text-slate-300">
+                  {profile.bio || "No bio added yet."}
+                </p>
+              )}
+              </div>
+              </div>
                 </div>
+                </div>  
 
                 {/* BIO */}
-                <div
-                  className="
-                    profile-bio-card
-                    relative mt-4 overflow-hidden rounded-[22px]
-                    border border-[rgba(187,146,239,0.17)]
-                    bg-[linear-gradient(145deg,rgba(249,243,255,0.82),rgba(255,255,255,0.60))]
-                    p-5
-                    shadow-[0_13px_26px_rgba(139,91,199,0.07),inset_0_1px_2px_rgba(255,255,255,0.94)]
-                  "
-                >
-                  <div className="absolute -right-10 -top-10 h-28 w-28 rounded-full bg-[rgba(168,108,239,0.08)] blur-2xl" />
-
-                  <div className="relative">
-                    <span
-                      className="
-                        profile-bio-label
-                        inline-flex rounded-xl
-                        border border-[rgba(175,117,236,0.12)]
-                        bg-[rgba(179,118,244,0.11)]
-                        px-3 py-1.5
-                        text-[10px] font-bold
-                        text-[rgba(133,79,198,0.90)]
-                      "
-                    >
-                      Bio
-                    </span>
-
-                    <p className="profile-bio-text mt-3 whitespace-pre-wrap text-[14px] leading-7 text-[rgba(65,60,82,0.84)]">
-                      {profile.bio || "No bio added yet."}
-                    </p>
-                  </div>
-                </div>
 
               </div>
             </div>
           </div>
         </div>
       </div>
-    </div>
-  </div>
+    </div>  
 );
 }
