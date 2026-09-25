@@ -8,6 +8,7 @@ import {
   Mail,
   Phone,
   Briefcase,
+  Save,
   UserRound,
 } from "lucide-react";
 import { createClient } from "@/lib/supabase/client";
@@ -73,6 +74,7 @@ export default function ProfilePage() {
   const [avatarUploading, setAvatarUploading] = useState(false);
   const [avatarPreview, setAvatarPreview] = useState("");
   const [profileSaveError, setProfileSaveError] = useState("");
+  const [profileSaveSuccess, setProfileSaveSuccess] = useState("");
 
 const [profileForm, setProfileForm] = useState({
   email: "",
@@ -80,6 +82,39 @@ const [profileForm, setProfileForm] = useState({
   job_title: "",
   bio: "",
 });
+
+const hasProfileChanges =
+  profileForm.email.trim() !== (profile.email || "").trim() ||
+  profileForm.phone.trim() !== (profile.phone || "").trim() ||
+  profileForm.job_title.trim() !== (profile.job_title || "").trim() ||
+  profileForm.bio.trim() !== (profile.bio || "").trim();
+
+
+  useEffect(() => {
+  const handleOutsideClick = (event: MouseEvent) => {
+    const target = event.target as HTMLElement;
+
+    if (!target.closest("[data-member-menu]")) {
+      setOpenMemberMenuId(null);
+    }
+  };
+
+  document.addEventListener("mousedown", handleOutsideClick);
+
+  return () => {
+    document.removeEventListener("mousedown", handleOutsideClick);
+  };
+}, []);
+
+useEffect(() => {
+  if (!profileSaveSuccess) return;
+
+  const timer = setTimeout(() => {
+    setProfileSaveSuccess("");
+  }, 3000);
+
+  return () => clearTimeout(timer);
+}, [profileSaveSuccess]);
 
 useEffect(() => {
   return () => {
@@ -380,20 +415,60 @@ const handleAvatarUpload = async (file: File) => {
 };
 
 const handleSaveProfile = async () => {
+  if (!hasProfileChanges) return;
   if (!currentUserId) return;
 
+  const email = profileForm.email.trim();
+
+if (!email) {
+  setProfileSaveError("Email address is required.");
+  return;
+}
+
+if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
+  setProfileSaveError("Please enter a valid email address.");
+  return;
+}
+
+const phone = profileForm.phone.trim();
+
+if (phone && !/^[0-9+\-\s()]{7,20}$/.test(phone)) {
+  setProfileSaveError("Please enter a valid phone number.");
+  return;
+}
+
+const jobTitle = profileForm.job_title.trim();
+
+if (!jobTitle) {
+  setProfileSaveError("Job title is required.");
+  return;
+}
+
+if (jobTitle.length > 60) {
+  setProfileSaveError("Job title must be 60 characters or less.");
+  return;
+}
+
+const bio = profileForm.bio.trim();
+
+if (bio.length > 300) {
+  setProfileSaveError("Bio must be 300 characters or less.");
+  return;
+}
+
   setProfileSaveError("");
+  setProfileSaveSuccess("");
   setProfileSaveLoading(true);
 
   try {
     const { error: updateError } = await supabase
       .from("profiles")
       .update({
-        email: profileForm.email.trim(),
-        phone: profileForm.phone.trim(),
-        job_title: profileForm.job_title.trim(),
-        bio: profileForm.bio.trim(),
-      })
+      email,
+      phone,
+      job_title: jobTitle,
+      bio,
+    })
       .eq("id", currentUserId);
 
     if (updateError) {
@@ -402,32 +477,32 @@ const handleSaveProfile = async () => {
     }
 
     setProfile((prev) => ({
-      ...prev,
-      email: profileForm.email.trim(),
-      phone: profileForm.phone.trim(),
-      job_title: profileForm.job_title.trim(),
-      bio: profileForm.bio.trim(),
-    }));
+    ...prev,
+    email,
+    phone,
+    job_title: jobTitle,
+    bio,
+  }));
 
     setTeamMembers((members) =>
       members.map((member) =>
         member.id === currentUserId
           ? {
               ...member,
-              email: profileForm.email.trim(),
-              phone: profileForm.phone.trim(),
-              job_title: profileForm.job_title.trim(),
+              email,
+              phone,
+              job_title: jobTitle,
             }
           : member
       )
     );
 
+    setProfileSaveSuccess("Profile updated successfully.");
+
     setIsEditingProfile(false);
   } catch (error) {
-  console.error("Avatar upload error:", error);
-  setProfileSaveError("Unable to upload profile image.");
-  setAvatarPreview("");
-  setAvatarFile(null);
+  console.error("Profile save error:", error);
+  setProfileSaveError("Unable to save profile changes.");
 } finally {
     setProfileSaveLoading(false);
   }
@@ -614,15 +689,15 @@ const handleRemoveMember = async () => {
 };  
 
 const teamOverviewCard = (
-  <div className="h-[255px] overflow-hidden rounded-2xl border border-slate-700/70 bg-slate-900/60 p-4">
+  <div className="profile-team-overview h-[255px] overflow-hidden rounded-2xl border border-slate-700/70 bg-slate-900/60 p-4">
     {/* Header */}
     <div className="flex items-start justify-between">
       <div>
-        <h3 className="text-[17px] font-bold leading-tight text-white">
+        <h3 className="profile-team-overview-title text-[17px] font-bold leading-tight">
         Team Overview
       </h3>
 
-      <p className="mt-0.5 text-[12px] leading-4 text-slate-400">
+      <p className="profile-team-overview-subtitle mt-0.5 text-[12px] leading-4">
         Total employees and their roles
       </p>
       </div>
@@ -633,7 +708,7 @@ const teamOverviewCard = (
     </div>
 
     {/* Total Members */}
-    <div className="mt-2 flex h-[62px] items-center justify-between rounded-[14px] border border-slate-700/60 bg-gradient-to-r from-slate-800/90 to-slate-800/60 px-4 shadow-inner">
+    <div className="profile-team-total mt-2 flex h-[62px] items-center justify-between rounded-[14px] px-4">
       <p className="text-3xl font-bold text-white">
         {teamMembers.length}
       </p>
@@ -646,7 +721,7 @@ const teamOverviewCard = (
 
     {/* Role Cards */}
     <div className="mt-2 grid grid-cols-3 gap-3">
-      <div className="rounded-xl border border-violet-500/50 bg-violet-500/15 p-4 text-center">
+      <div className="profile-role-admin rounded-xl p-4 text-center">
         <p className="text-xl font-bold text-white">
           {adminCount}
         </p>
@@ -655,7 +730,7 @@ const teamOverviewCard = (
         </p>
       </div>
 
-      <div className="rounded-xl border border-blue-500/50 bg-blue-500/15 p-4 text-center">
+      <div className="profile-role-subadmin rounded-xl p-4 text-center">
         <p className="text-xl font-bold text-white">
           {subAdminCount}
         </p>
@@ -664,7 +739,7 @@ const teamOverviewCard = (
         </p>
       </div>
 
-      <div className="rounded-xl border border-emerald-500/50 bg-emerald-500/15 p-4 text-center">
+      <div className="profile-role-employee rounded-xl p-4 text-center">
         <p className="text-xl font-bold text-white">
           {employeeCount}
         </p>
@@ -699,9 +774,9 @@ const teamOverviewCard = (
 
       <div className="mb-1 flex w-full flex-col gap-3 md:flex-row md:items-end md:justify-between lg:col-span-2">
         <div>
-          <h1 className="profile-title-enter text-[22px] font-extrabold tracking-[-0.02em] text-[rgba(28,24,46,0.95)]">
+          <h1 className="text-[22px] font-semibold tracking-[-0.015em] text-[rgba(248,250,252,0.96)]">
             My Profile
-          </h1>
+          </h1> 
 
           <p className="mt-1 text-sm text-slate-400">
             Manage your profile and view your team members
@@ -1030,14 +1105,14 @@ const teamOverviewCard = (
       </button>
       </div>
       {activeProfileTab === "team" && (
-      <div className="order-4 -mt-4 rounded-2xl border border-slate-800 bg-slate-900/40 p-5 lg:col-span-2 lg:row-start-4">
+      <div className="profile-team-list-card order-4 -mt-4 rounded-2xl border border-slate-800 bg-slate-900/40 p-5 lg:col-span-2 lg:row-start-4">
       <div className="flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
         <div>
-          <h2 className="text-lg font-semibold text-white">
+          <h2 className="profile-team-list-title text-lg font-semibold">
             All Team Members
           </h2>
 
-          <p className="mt-1 text-sm text-slate-400">
+          <p className="profile-team-list-subtitle mt-1 text-sm">
             View all members in your company and their roles
           </p>
         </div>
@@ -1072,7 +1147,22 @@ const teamOverviewCard = (
             setInviteRole("user");
             setIsInviteOpen(true);
           }}
-            className="h-10 whitespace-nowrap rounded-lg bg-violet-600 px-4 text-sm font-medium text-white transition hover:bg-violet-500"
+            className="
+            inline-flex items-center justify-center gap-2
+            rounded-[12px]
+            !border !border-[rgba(139,92,246,0.72)]
+            !bg-[rgba(124,58,237,1)]
+            px-4 py-2.5
+            text-[13px] font-semibold
+            !text-[rgba(255,255,255,1)]
+            shadow-[0_8px_24px_rgba(124,58,237,0.32)]
+            transition-all duration-200
+            hover:-translate-y-[1px]
+            hover:!border-[rgba(196,181,253,0.95)]
+            hover:!bg-[rgba(139,92,246,1)]
+            hover:shadow-[0_10px_30px_rgba(139,92,246,0.42)]
+            active:translate-y-0
+          "
           >
             + Invite Member
           </button>
@@ -1168,7 +1258,7 @@ const teamOverviewCard = (
         </span>
       </div>
 
-      <div className="relative flex justify-center">
+      <div className="relative flex justify-center" data-member-menu>
         {isCurrentUser || !canManageTeam ? (
           <span className="text-slate-500">—</span>
         ) : (
@@ -1293,22 +1383,30 @@ const teamOverviewCard = (
         {/* Main Card */}
         <div
           className="
-            profile-main-card
-            relative overflow-hidden rounded-[34px]
-            border border-[rgba(255,255,255,0.85)]
-            bg-[linear-gradient(145deg,rgba(248,244,255,0.98)_0%,rgba(239,234,255,0.96)_48%,rgba(247,243,255,0.98)_100%)]
-            shadow-[0_32px_75px_rgba(94,72,160,0.18),inset_0_2px_3px_rgba(255,255,255,0.95),inset_0_-3px_8px_rgba(117,85,205,0.07)]
-            transition-all duration-500
-            hover:shadow-[0_40px_85px_rgba(94,72,160,0.22)]
-          "
+          profile-main-card
+          relative overflow-hidden rounded-[34px]
+          transition-all duration-300
+        "
         >
 
           {/* Soft internal RGBA light */}
-          <div className="pointer-events-none absolute -left-16 -top-20 h-72 w-72 rounded-full bg-[rgba(255,255,255,0.72)] blur-[70px]" />
+          <div className="
+            pointer-events-none absolute -left-16 -top-20 h-72 w-72 rounded-full
+            bg-[rgba(59,130,246,0.05)] blur-[80px]
+            dark:bg-[rgba(59,130,246,0.07)]
+          " />
 
-          <div className="pointer-events-none absolute -right-20 top-10 h-72 w-72 rounded-full bg-[rgba(164,112,255,0.12)] blur-[80px]" />
+          <div className="
+            pointer-events-none absolute -right-20 top-10 h-72 w-72 rounded-full
+            bg-[rgba(139,92,246,0.05)] blur-[90px]
+            dark:bg-[rgba(139,92,246,0.08)]
+          " />
 
-          <div className="pointer-events-none absolute bottom-0 left-1/3 h-56 w-72 rounded-full bg-[rgba(105,130,255,0.07)] blur-[80px]" />
+          <div className="
+            pointer-events-none absolute bottom-0 left-1/3 h-56 w-72 rounded-full
+            bg-[rgba(6,182,212,0.035)] blur-[90px]
+            dark:bg-[rgba(6,182,212,0.06)]
+          " />
 
           {/* PROFILE TOP */}
           <div className="relative z-10 flex flex-col gap-4 px-5 py-5 md:flex-row md:items-center md:justify-between md:px-6 md:py-5">
@@ -1404,7 +1502,13 @@ const teamOverviewCard = (
               {/* Profile Details */}
               <div className="min-w-0">
                 <div className="flex flex-wrap items-center gap-3">
-                  <h2 className="truncate text-[25px] font-extrabold tracking-[-0.025em] text-white">
+                  <h2 className="
+                    truncate
+                    text-[24px]
+                    font-semibold
+                    tracking-[-0.015em]
+                    !text-[rgba(15,23,42,0.96)]
+                  ">
                     {profile.full_name || "User"}
                   </h2>
 
@@ -1416,24 +1520,24 @@ const teamOverviewCard = (
                         : "Employee"}
                   </span>
 
-                  <span className="flex items-center gap-2 text-sm text-slate-300">
+                  <span className="flex items-center gap-2 text-sm text-slate-700">
                     <span className="h-2.5 w-2.5 rounded-full bg-emerald-400" />
                     Online
                   </span>
                 </div>
 
-                <div className="mt-2 space-y-1.5 text-[13px] text-slate-400">
+                <div className="mt-2 space-y-1.5 text-[13px] text-slate-700">
                   <div className="flex items-center gap-2">
-                    <Mail size={14} className="shrink-0 text-slate-400" />
+                    <Mail size={14} className="shrink-0 text-slate-500" />
                     <span>{profile.email || "—"}</span>
                   </div>
 
                   <div className="flex items-center gap-2">
-                    <Phone size={14} className="shrink-0 text-slate-400" />
+                    <Phone size={14} className="shrink-0 text-slate-500" />
                     <span>{profile.phone || "—"}</span>
                   </div>
 
-                  <div className="text-slate-300">
+                  <div className="text-slate-700">
                     {profile.job_title || "—"}
                   </div>
                 </div>
@@ -1448,24 +1552,39 @@ const teamOverviewCard = (
                   handleSaveProfile();
                 } else {
                   setProfileSaveError("");
+                  setProfileSaveSuccess("");
                   setIsEditingProfile(true);
                 }
               }}
-              disabled={profileSaveLoading}
+              disabled={
+              profileSaveLoading ||
+              (isEditingProfile && !hasProfileChanges)
+            }
               className="
-                inline-flex shrink-0 items-center justify-center gap-2
-                rounded-[15px]
-                border border-violet-500/40
-                bg-violet-500/15
-                px-4 py-2.5
-                text-sm font-semibold text-violet-300
-                transition
-                hover:bg-violet-500/20
-                disabled:cursor-not-allowed
-                disabled:opacity-50
-              "
+              inline-flex shrink-0 items-center justify-center gap-2
+              rounded-[12px]
+              !border !border-[rgba(59,130,246,0.75)]
+              !bg-[rgba(37,99,235,1)]
+              px-5 py-2.5
+              text-[13px] font-semibold !text-[rgba(255,255,255,1)]
+              shadow-[0_8px_24px_rgba(37,99,235,0.35)]
+              transition-all duration-200
+              hover:-translate-y-[1px]
+              hover:!border-[rgba(147,197,253,1)]
+              hover:!bg-[rgba(59,130,246,1)]
+              hover:shadow-[0_12px_30px_rgba(37,99,235,0.45)]
+              active:translate-y-0
+              disabled:cursor-not-allowed
+              disabled:opacity-50
+            "
             >
-              <Pencil size={16} />
+              {profileSaveLoading ? (
+                <span className="h-4 w-4 animate-spin rounded-full border-2 border-violet-300/40 border-t-violet-300" />
+              ) : isEditingProfile ? (
+                <Save size={16} />
+              ) : (
+                <Pencil size={16} />
+              )}
 
               {profileSaveLoading
                 ? "Saving..."
@@ -1489,18 +1608,18 @@ const teamOverviewCard = (
                 setIsEditingProfile(false);
               }}
               className="
-                ml-2
-                inline-flex items-center justify-center
-                rounded-[15px]
-                border border-slate-700
-                bg-slate-800/70
-                px-4 py-2.5
-                text-sm font-semibold text-slate-300
-                transition
-                hover:bg-slate-700
-                disabled:cursor-not-allowed
-                disabled:opacity-50
-              "
+              ml-2
+              inline-flex items-center justify-center
+              rounded-[15px]
+              border border-slate-700
+              bg-slate-800/70
+              px-4 py-2.5
+              text-sm font-semibold text-slate-300
+              transition
+              hover:bg-slate-700
+              disabled:cursor-not-allowed
+              disabled:opacity-50
+            "
             >
               Cancel
             </button>
@@ -1510,6 +1629,12 @@ const teamOverviewCard = (
               {profileSaveError}
             </p>
           )}
+
+          {profileSaveSuccess && (
+          <p className="mt-2 text-sm font-medium text-emerald-400">
+            {profileSaveSuccess}
+          </p>
+        )}
           </div>
 
           {/* INNER 3D PANEL */}
@@ -1523,45 +1648,54 @@ const teamOverviewCard = (
                   <div
                     className="
                     group relative h-[76px] overflow-hidden rounded-[18px]
-                    border border-slate-700/70
-                    bg-slate-800/50
+                    !border !border-[rgba(59,130,246,0.38)]
+                    !bg-[rgba(59,130,246,0.10)]
                     px-4 py-3
-                    transition-all duration-300
-                    hover:border-slate-600"
+                    shadow-[0_8px_22px_rgba(0,0,0,0.16)]
+                    transition-all duration-200
+                    hover:-translate-y-[1px]
+                    hover:!border-[rgba(59,130,246,0.72)]
+                    hover:!bg-[rgba(59,130,246,0.16)]
+                    hover:shadow-[0_10px_28px_rgba(37,99,235,0.18)]
+                  "
                   >
 
                     <div className="flex h-full items-center gap-3">
                       <div
-                        className="
-                         flex h-10 w-10 shrink-0 items-center justify-center rounded-[12px]
-                          border border-[rgba(255,255,255,0.72)]
-                          bg-[linear-gradient(145deg,rgba(129,158,255,0.28),rgba(100,127,244,0.14))]
-                          shadow-[0_8px_16px_rgba(87,114,219,0.13),inset_0_1px_2px_rgba(255,255,255,0.94)]
-                        "
+                       className="
+                        flex h-10 w-10 shrink-0 items-center justify-center rounded-[12px]
+                        !border !border-[rgba(59,130,246,0.55)]
+                        !bg-[rgba(59,130,246,0.20)]
+                        shadow-[0_6px_18px_rgba(37,99,235,0.20)]
+                      "
                       >
                         <Mail
                           size={17}
-                          className="text-[rgba(75,104,218,0.94)]"
+                          className="!text-[rgba(96,165,250,1)]"
                         />
                       </div>
                       <div className="min-w-0">
-                      <p className="text-[10px] font-bold uppercase tracking-[0.12em] text-[rgba(101,105,132,0.62)]">
+                      <p className="text-[10px] font-bold uppercase tracking-[0.12em] text-slate-500">
                         Email Address
                       </p>
                       {isEditingProfile ? (
                       <input
                         type="email"
+                        autoComplete="email"
                         value={profileForm.email}
-                        onChange={(e) =>
+                        maxLength={254}
+                        disabled={profileSaveLoading}
+                        onChange={(e) => {
+                          setProfileSaveError("");
                           setProfileForm((prev) => ({
                             ...prev,
                             email: e.target.value,
                           }))
-                        }
-                        className="mt-1 w-full rounded-lg border border-slate-700 bg-slate-950/60 px-2 py-1 text-[13px] font-semibold text-slate-200 outline-none focus:border-violet-500"
+                        }}
+                        className="mt-1 w-full rounded-lg border border-slate-700 bg-slate-950/60 px-2 py-1 text-[13px] font-semibold text-slate-200 outline-none focus:border-violet-500 disabled:cursor-not-allowed disabled:opacity-60"
                       />
                     ) : (
-                      <p className="mt-1 whitespace-nowrap text-[13px] font-semibold text-slate-300">
+                      <p className="mt-1 whitespace-nowrap text-[13px] font-semibold text-slate-700">
                         {profile.email || "Not provided"}
                       </p>
                     )}
@@ -1573,47 +1707,56 @@ const teamOverviewCard = (
                   <div
                     className="
                     group relative h-[76px] overflow-hidden rounded-[18px]
-                    border border-slate-700/70
-                    bg-slate-800/50
+                    !border !border-[rgba(16,185,129,0.38)]
+                    !bg-[rgba(16,185,129,0.10)]
                     px-4 py-3
-                    transition-all duration-300
-                    hover:border-slate-600
+                    shadow-[0_8px_22px_rgba(0,0,0,0.16)]
+                    transition-all duration-200
+                    hover:-translate-y-[1px]
+                    hover:!border-[rgba(16,185,129,0.72)]
+                    hover:!bg-[rgba(16,185,129,0.16)]
+                    hover:shadow-[0_10px_28px_rgba(16,185,129,0.18)]
                   "
                   >
 
                     <div className="flex h-full items-center gap-3">
                       <div
                         className="
-                          flex h-10 w-10 shrink-0 items-center justify-center rounded-[12px]
-                          border border-[rgba(255,255,255,0.72)]
-                          bg-[linear-gradient(145deg,rgba(108,219,164,0.27),rgba(75,186,134,0.13))]
-                          shadow-[0_8px_16px_rgba(62,169,119,0.11),inset_0_1px_2px_rgba(255,255,255,0.94)]
-                        "
+                        flex h-10 w-10 shrink-0 items-center justify-center rounded-[12px]
+                        !border !border-[rgba(16,185,129,0.55)]
+                        !bg-[rgba(16,185,129,0.20)]
+                        shadow-[0_6px_18px_rgba(16,185,129,0.20)]
+                      "
                       >
                         <Phone
                           size={17}
-                          className="text-[rgba(39,159,104,0.94)]"
+                          className="!text-[rgba(52,211,153,1)]"
                         />
                       </div>
                       <div className="min-w-0">
-                      <p className="text-[10px] font-bold uppercase tracking-[0.12em] text-[rgba(101,105,132,0.62)]">
+                      <p className="text-[10px] font-bold uppercase tracking-[0.12em] text-slate-500">
                         Phone
                       </p>
 
                       {isEditingProfile ? (
                         <input
                           type="text"
+                          inputMode="tel"
+                          autoComplete="tel"
                           value={profileForm.phone}
-                          onChange={(e) =>
+                          disabled={profileSaveLoading}
+                          maxLength={20}
+                          onChange={(e) => {
+                            setProfileSaveError("");
                             setProfileForm((prev) => ({
                               ...prev,
                               phone: e.target.value,
                             }))
-                          }
-                          className="mt-1 w-full rounded-lg border border-slate-700 bg-slate-950/60 px-2 py-1 text-[13px] font-semibold text-slate-200 outline-none focus:border-violet-500"
+                          }}
+                          className="mt-1 w-full rounded-lg border border-slate-700 bg-slate-950/60 px-2 py-1 text-[13px] font-semibold text-slate-200 outline-none focus:border-violet-500 disabled:cursor-not-allowed disabled:opacity-60"
                         />
                       ) : (
-                        <p className="mt-1 text-[13px] font-semibold text-slate-300">
+                        <p className="mt-1 text-[13px] font-semibold text-slate-700">
                           {profile.phone || "Not provided"}
                         </p>
                       )}
@@ -1624,47 +1767,56 @@ const teamOverviewCard = (
                   <div
                     className="
                     group relative h-[76px] overflow-hidden rounded-[18px]
-                    border border-slate-700/70
-                    bg-slate-800/50
+                    !border !border-[rgba(245,158,11,0.38)]
+                    !bg-[rgba(245,158,11,0.10)]
                     px-4 py-3
-                    transition-all duration-300
-                    hover:border-slate-600                    "
+                    shadow-[0_8px_22px_rgba(0,0,0,0.16)]
+                    transition-all duration-200
+                    hover:-translate-y-[1px]
+                    hover:!border-[rgba(245,158,11,0.72)]
+                    hover:!bg-[rgba(245,158,11,0.16)]
+                    hover:shadow-[0_10px_28px_rgba(245,158,11,0.18)]
+                  "
                   >
                     <div className="absolute -right-8 -top-8 h-24 w-24 rounded-full bg-[rgba(241,154,83,0.08)] blur-2xl" />
 
                     <div className="flex h-full items-center gap-3">
                       <div
                         className="
-                          flex h-10 w-10 shrink-0 items-center justify-center rounded-[12px]
-                          border border-[rgba(255,255,255,0.72)]
-                          bg-[linear-gradient(145deg,rgba(255,183,122,0.28),rgba(239,138,69,0.13))]
-                          shadow-[0_8px_16px_rgba(205,132,67,0.10),inset_0_1px_2px_rgba(255,255,255,0.94)]
-                        "
+                        flex h-10 w-10 shrink-0 items-center justify-center rounded-[12px]
+                        !border !border-[rgba(245,158,11,0.55)]
+                        !bg-[rgba(245,158,11,0.20)]
+                        shadow-[0_6px_18px_rgba(245,158,11,0.20)]
+                      "
                       >
                         <Briefcase
                           size={17}
-                          className="text-[rgba(220,116,48,0.94)]"
+                          className="!text-[rgba(251,191,36,1)]"
                         />
                       </div>
                       <div className="min-w-0">
-                      <p className="text-[10px] font-bold uppercase tracking-[0.12em] text-[rgba(101,105,132,0.62)]">
+                      <p className="text-[10px] font-bold uppercase tracking-[0.12em] text-slate-500">
                         Job Title
                       </p>
 
                       {isEditingProfile ? (
                       <input
                         type="text"
+                        autoComplete="organization-title"
                         value={profileForm.job_title}
-                        onChange={(e) =>
+                        disabled={profileSaveLoading}
+                        maxLength={60}
+                        onChange={(e) => {
+                          setProfileSaveError("");
                           setProfileForm((prev) => ({
                             ...prev,
                             job_title: e.target.value,
                           }))
-                        }
-                        className="mt-1 w-full rounded-lg border border-slate-700 bg-slate-950/60 px-2 py-1 text-[13px] font-semibold text-slate-200 outline-none focus:border-violet-500"
+                        }}
+                        className="mt-1 w-full rounded-lg border border-slate-700 bg-slate-950/60 px-2 py-1 text-[13px] font-semibold text-slate-200 outline-none focus:border-violet-500 disabled:cursor-not-allowed disabled:opacity-60"
                       />
                     ) : (
-                      <p className="mt-1 text-[13px] font-semibold text-slate-300">
+                      <p className="mt-1 text-[13px] font-semibold text-slate-700">
                         {profile.job_title || "Not provided"}
                       </p>
                     )}
@@ -1672,34 +1824,57 @@ const teamOverviewCard = (
                   </div>
                   </div>
                 <div
-                className="
+                className={`
                 profile-bio-card
-                relative h-[76px] overflow-hidden rounded-[18px]
-                border border-[rgba(187,146,239,0.17)]
-                bg-[linear-gradient(145deg,rgba(249,243,255,0.82),rgba(255,255,255,0.60))]
+                group relative rounded-[18px]
+                ${isEditingProfile ? "min-h-[120px]" : "h-[76px] overflow-hidden"}
+                !border !border-[rgba(6,182,212,0.38)]
+                !bg-[rgba(6,182,212,0.10)]
                 px-4 py-3
-                shadow-[0_13px_26px_rgba(139,91,199,0.07),inset_0_1px_2px_rgba(255,255,255,0.94)]">
+                shadow-[0_8px_22px_rgba(0,0,0,0.16)]
+                transition-all duration-200
+                hover:-translate-y-[1px]
+                hover:!border-[rgba(6,182,212,0.72)]
+                hover:!bg-[rgba(6,182,212,0.16)]
+                hover:shadow-[0_10px_28px_rgba(6,182,212,0.18)]
+              `}
+              >
               <div className="absolute -right-10 -top-10 h-28 w-28 rounded-full bg-[rgba(168,108,239,0.08)] blur-2xl" />
               <div className="flex h-full items-center gap-3">
-                <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-[14px] border border-cyan-500/20 bg-cyan-500/15 text-sm font-bold text-cyan-400"> i </div>
+                <div className="
+                  flex h-11 w-11 shrink-0 items-center justify-center rounded-[14px]
+                  !border !border-[rgba(6,182,212,0.55)]
+                  !bg-[rgba(6,182,212,0.20)]
+                  text-sm font-bold
+                  !text-[rgba(34,211,238,1)]
+                  shadow-[0_6px_18px_rgba(6,182,212,0.20)]
+                "> i </div>
               <div className="min-w-0">
-              <span className="text-[10px] font-bold uppercase tracking-[0.12em] text-slate-400">
+              <span className="text-[10px] font-bold uppercase tracking-[0.12em] text-slate-500">
               Bio
               </span>
               {isEditingProfile ? (
+                <>
                 <textarea
                   value={profileForm.bio}
-                  onChange={(e) =>
+                  disabled={profileSaveLoading}
+                  maxLength={300}
+                  onChange={(e) => {
+                    setProfileSaveError("");
                     setProfileForm((prev) => ({
                       ...prev,
                       bio: e.target.value,
                     }))
-                  }
+                  }}
                   rows={3}
-                  className="mt-1 w-full resize-none rounded-lg border border-slate-700 bg-slate-950/60 px-3 py-2 text-[13px] text-slate-200 outline-none focus:border-violet-500"
+                  className="mt-1 w-full resize-none rounded-lg border border-slate-700 bg-slate-950/60 px-3 py-2 text-[13px] text-slate-200 outline-none focus:border-violet-500 disabled:cursor-not-allowed disabled:opacity-60"
                 />
+                <p className="mt-1 text-right text-[11px] text-slate-500">
+                {profileForm.bio.length}/300
+              </p>
+              </>
               ) : (
-                <p className="profile-bio-text mt-1 whitespace-pre-wrap text-[14px] leading-7 text-slate-300">
+                <p className="profile-bio-text mt-1 whitespace-pre-wrap text-[14px] leading-7 text-slate-700">
                   {profile.bio || "No bio added yet."}
                 </p>
               )}
