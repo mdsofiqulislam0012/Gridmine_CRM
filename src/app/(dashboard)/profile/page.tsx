@@ -315,7 +315,7 @@ const getRoleLabel = (role: string | null) => {
 
 const getMemberStatus = (lastSeenAt: string | null) => {
   if (isMemberActive(lastSeenAt)) {
-    return "Active now";
+    return " Online ";
   }
 
   if (!lastSeenAt) {
@@ -702,48 +702,48 @@ const teamOverviewCard = (
       </p>
       </div>
 
-      <div className="flex h-11 w-11 items-center justify-center rounded-xl border border-slate-700 bg-slate-800/70 text-lg text-violet-300">
+      <div className="profile-team-overview-icon flex h-11 w-11 items-center justify-center rounded-xl text-lg">
         ♙
       </div>
     </div>
 
     {/* Total Members */}
     <div className="profile-team-total mt-2 flex h-[62px] items-center justify-between rounded-[14px] px-4">
-      <p className="text-3xl font-bold text-white">
+      <p className="profile-team-total-number text-3xl font-bold">
         {teamMembers.length}
       </p>
 
       <div className="flex items-center gap-2 text-xs text-slate-400">
-      <span className="h-2 w-2 rounded-full bg-emerald-500" />
-      <span>{activeMemberCount} active now</span>
+      <span className="profile-team-active-now text-xs" />
+      <span>{activeMemberCount} Online </span>
       </div>
       </div>
 
     {/* Role Cards */}
     <div className="mt-2 grid grid-cols-3 gap-3">
       <div className="profile-role-admin rounded-xl p-4 text-center">
-        <p className="text-xl font-bold text-white">
+        <p className="profile-role-count text-xl font-bold">
           {adminCount}
         </p>
-        <p className="mt-1 text-sm text-violet-300">
+        <p className="profile-role-admin-label text-xs font-medium">
           Admin
         </p>
       </div>
 
       <div className="profile-role-subadmin rounded-xl p-4 text-center">
-        <p className="text-xl font-bold text-white">
+        <p className="profile-role-count text-xl font-bold">
           {subAdminCount}
         </p>
-        <p className="mt-1 text-sm text-blue-300">
+        <p className="profile-role-subadmin-label text-xs font-medium">
           Sub Admins
         </p>
       </div>
 
       <div className="profile-role-employee rounded-xl p-4 text-center">
-        <p className="text-xl font-bold text-white">
+        <p className="profile-role-count text-xl font-bold">
           {employeeCount}
         </p>
-        <p className="mt-1 text-sm text-emerald-300">
+        <p className="profile-role-employee-label text-xs font-medium">
           Employees
         </p>
       </div>
@@ -774,20 +774,20 @@ const teamOverviewCard = (
 
       <div className="mb-1 flex w-full flex-col gap-3 md:flex-row md:items-end md:justify-between lg:col-span-2">
         <div>
-          <h1 className="text-[22px] font-semibold tracking-[-0.015em] text-[rgba(248,250,252,0.96)]">
+          <h1 className="profile-page-title text-[22px] font-semibold tracking-[-0.015em]">
             My Profile
           </h1> 
 
-          <p className="mt-1 text-sm text-slate-400">
+          <p className="profile-page-subtitle mt-1 text-sm">
             Manage your profile and view your team members
           </p>
         </div>
 
-        <div className="flex items-center gap-2 text-xs text-slate-400">
-          <span>Home</span>
-          <span>›</span>
-          <span className="font-medium text-slate-200">Profile</span>
-        </div>
+        <div className="profile-breadcrumb flex items-center gap-2 text-xs">
+        <span>Home</span>
+        <span>›</span>
+        <span className="profile-breadcrumb-current font-medium">Profile</span>
+      </div>
       </div>
         <div className="team-overview-section self-start lg:col-start-2 lg:row-start-2">
           {teamOverviewCard}
@@ -795,14 +795,14 @@ const teamOverviewCard = (
 
         {isInviteOpen && (
   <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 p-4 backdrop-blur-sm">
-    <div className="w-full max-w-lg rounded-2xl border border-slate-800 bg-slate-950 p-6 shadow-2xl">
+    <div className="profile-invite-modal w-full max-w-lg rounded-2xl p-6 shadow-2xl">
       <div className="flex items-start justify-between">
         <div>
-          <h2 className="text-lg font-semibold text-white">
+          <h2 className="profile-invite-modal-title text-lg font-semibold">
             Invite Team Member
           </h2>
 
-          <p className="mt-1 text-sm text-slate-400">
+          <p className="profile-invite-modal-subtitle mt-1 text-sm">
             Add a new member to your Gridmine CRM team.
           </p>
         </div>
@@ -873,7 +873,7 @@ const teamOverviewCard = (
   <button
     type="button"
     onClick={() => setIsInviteOpen(false)}
-    className="h-10 rounded-lg border border-slate-700 px-4 text-sm font-medium text-slate-300 transition hover:bg-slate-800"
+    className="profile-invite-cancel ml-2 inline-flex items-center justify-center rounded-[15px] px-4 py-2.5 text-[14px] font-semibold transition-all duration-200 disabled:cursor-not-allowed disabled:opacity-50"
   >
     Cancel
   </button>
@@ -1055,14 +1055,14 @@ const teamOverviewCard = (
   )}
 
     {/* 3D PROFILE CARD */}
-      <div className="order-3 -mt-2 flex items-center gap-1 border-b border-slate-800 lg:col-span-2 lg:row-start-3">
+      <div className="profile-tabs order-3 -mt-2 flex items-center gap-1 lg:col-span-2 lg:row-start-3">
         <button
         type="button"
         onClick={() => setActiveProfileTab("team")}
-        className={`flex h-12 items-center gap-2 border-b-2 px-4 text-sm font-medium transition ${
+        className={`profile-tab-button flex h-12 items-center gap-2 border-b-2 px-4 text-sm font-medium transition ${
         activeProfileTab === "team"
-          ? "border-violet-500 text-violet-400"
-          : "border-transparent text-slate-400 hover:text-white"
+          ? "profile-tab-active"
+          : "profile-tab-idle"
       }`}
       >
         Team Members
@@ -1071,11 +1071,11 @@ const teamOverviewCard = (
         <button
         type="button"
         onClick={() => setActiveProfileTab("activity")}
-        className={`px-1 py-3 text-sm font-medium transition ${
-          activeProfileTab === "activity"
-            ? "border-b-2 border-violet-500 text-violet-400"
-            : "text-slate-400 hover:text-white"
-        }`}
+        className={`profile-tab-button border-b-2 px-1 py-3 text-sm font-medium transition ${
+        activeProfileTab === "activity"
+          ? "profile-tab-active"
+          : "profile-tab-idle"
+      }`}
       >
         My Activity
       </button>
@@ -1083,11 +1083,11 @@ const teamOverviewCard = (
         <button
           type="button"
           onClick={() => setActiveProfileTab("security")}
-          className={`px-1 py-3 text-sm font-medium transition ${
-            activeProfileTab === "security"
-              ? "border-b-2 border-violet-500 text-violet-400"
-              : "text-slate-400 hover:text-white"
-          }`}
+          className={`profile-tab-button border-b-2 px-1 py-3 text-sm font-medium transition ${
+          activeProfileTab === "security"
+            ? "profile-tab-active"
+            : "profile-tab-idle"
+        }`}
         >
           Security
         </button>
@@ -1095,11 +1095,11 @@ const teamOverviewCard = (
         <button
         type="button"
         onClick={() => setActiveProfileTab("notifications")}
-        className={`px-1 py-3 text-sm font-medium transition ${
-          activeProfileTab === "notifications"
-            ? "border-b-2 border-violet-500 text-violet-400"
-            : "text-slate-400 hover:text-white"
-        }`}
+        className={`profile-tab-button border-b-2 px-1 py-3 text-sm font-medium transition ${
+        activeProfileTab === "notifications"
+          ? "profile-tab-active"
+          : "profile-tab-idle"
+      }`}
       >
         Notifications
       </button>
@@ -1114,7 +1114,7 @@ const teamOverviewCard = (
 
           <p className="profile-team-list-subtitle mt-1 text-sm">
             View all members in your company and their roles
-          </p>
+          </p>  
         </div>
 
         <div className="flex flex-col gap-2 sm:flex-row sm:items-center">
@@ -1123,13 +1123,13 @@ const teamOverviewCard = (
             placeholder="Search team members..."
             value={memberSearch}
             onChange={(e) => setMemberSearch(e.target.value)}
-            className="h-10 w-full rounded-lg border border-slate-700 bg-slate-950/40 px-3 text-sm text-white outline-none placeholder:text-slate-500 focus:border-violet-500 sm:w-64"
+            className="profile-team-search h-10 w-full rounded-lg px-3 text-sm outline-none sm:w-64"
           />
 
           <select
             value={roleFilter}
             onChange={(e) => setRoleFilter(e.target.value)}
-            className="h-10 rounded-lg border border-slate-700 bg-slate-950/40 px-3 text-sm text-slate-300 outline-none focus:border-violet-500"
+            className="profile-team-role-filter h-10 rounded-lg px-3 text-sm outline-none"
           >
             <option value="all">All Roles</option>
             <option value="admin">Admin</option>
@@ -1147,22 +1147,7 @@ const teamOverviewCard = (
             setInviteRole("user");
             setIsInviteOpen(true);
           }}
-            className="
-            inline-flex items-center justify-center gap-2
-            rounded-[12px]
-            !border !border-[rgba(139,92,246,0.72)]
-            !bg-[rgba(124,58,237,1)]
-            px-4 py-2.5
-            text-[13px] font-semibold
-            !text-[rgba(255,255,255,1)]
-            shadow-[0_8px_24px_rgba(124,58,237,0.32)]
-            transition-all duration-200
-            hover:-translate-y-[1px]
-            hover:!border-[rgba(196,181,253,0.95)]
-            hover:!bg-[rgba(139,92,246,1)]
-            hover:shadow-[0_10px_30px_rgba(139,92,246,0.42)]
-            active:translate-y-0
-          "
+          className="profile-invite-button inline-flex h-10 items-center justify-center gap-2 rounded-[12px] px-4 text-[13px] font-semibold transition-all duration-200"
           >
             + Invite Member
           </button>
@@ -1171,8 +1156,8 @@ const teamOverviewCard = (
       </div>
       
 
-      <div className="mt-5 overflow-hidden rounded-xl border border-slate-800">
-        <div className="grid grid-cols-[40px_1.6fr_1fr_1.6fr_1.2fr_0.8fr_1fr_60px] items-center bg-slate-800/60 px-4 py-3 text-xs font-medium text-slate-400">
+      <div className="profile-team-table mt-5 overflow-hidden rounded-xl">
+        <div className="profile-team-table-head grid grid-cols-[40px_1.6fr_1fr_1.6fr_1.2fr_0.8fr_1fr_60px] items-center px-4 py-3 text-xs font-medium">
           <span>#</span>
           <span>Name</span>
           <span>Role</span>
@@ -1190,9 +1175,9 @@ const teamOverviewCard = (
   return (
     <div
       key={member.id}
-      className="grid grid-cols-[40px_1.6fr_1fr_1.6fr_1.2fr_0.8fr_1fr_60px] items-center border-t border-slate-800 px-4 py-3 text-sm text-slate-300"
+      className="profile-team-table-row grid grid-cols-[40px_1.6fr_1fr_1.6fr_1.2fr_0.8fr_1fr_60px] items-center px-4 py-3 text-sm"
     >
-      <span>{index + 1}</span>
+      <span className="profile-team-row-index">{index + 1}</span>
 
       <div className="flex min-w-0 items-center gap-3">
         {member.avatar_url ? (
@@ -1211,12 +1196,12 @@ const teamOverviewCard = (
 
         <div className="min-w-0">
           <div className="flex items-center gap-2">
-            <span className="truncate font-medium text-white">
+            <span className="profile-team-member-name truncate font-medium">
               {member.full_name || "Unnamed Member"}
             </span>
 
             {isCurrentUser && (
-              <span className="rounded bg-slate-700 px-1.5 py-0.5 text-[10px] text-slate-200">
+              <span className="profile-team-you-badge rounded px-1.5 py-0.5 text-[10px]">
                 You
               </span>
             )}
@@ -1225,22 +1210,22 @@ const teamOverviewCard = (
       </div>
 
       <span
-        className={`w-fit rounded-md px-2 py-1 text-xs font-medium ${
+        className={`profile-team-role-badge w-fit rounded-md px-2 py-1 text-xs font-medium ${
           member.role === "admin"
-            ? "bg-violet-500/15 text-violet-400"
+            ? "profile-team-role-admin-badge"
             : member.role === "sub_admin"
-              ? "bg-blue-500/15 text-blue-400"
-              : "bg-emerald-500/15 text-emerald-400"
+              ? "profile-team-role-subadmin-badge"
+              : "profile-team-role-employee-badge"
         }`}
       >
         {getRoleLabel(member.role)}
       </span>
 
-      <span className="truncate">
+      <span className="profile-team-member-email truncate">
         {member.email || "—"}
       </span>
 
-      <span>
+      <span className="profile-team-member-phone">
         {member.phone || "—"}
       </span>
 
@@ -1253,7 +1238,13 @@ const teamOverviewCard = (
           }`}
         />
 
-        <span className={isActive ? "text-emerald-400" : "text-slate-400"}>
+        <span
+        className={
+          isActive
+            ? "profile-team-status-active"
+            : "profile-team-status-offline"
+        }
+      >
           {getMemberStatus(member.last_seen_at)}
         </span>
       </div>
@@ -1269,14 +1260,14 @@ const teamOverviewCard = (
                 currentId === member.id ? null : member.id
               )
             }
-            className="flex h-8 w-8 items-center justify-center rounded-md text-slate-400 transition hover:bg-slate-800 hover:text-white"
+            className="profile-team-action-button flex h-8 w-8 items-center justify-center rounded-md transition-all"
           >
             •••
           </button>
           
         )}
         {openMemberMenuId === member.id && (
-        <div className="absolute right-0 top-9 z-50 w-40 overflow-hidden rounded-lg border border-slate-700 bg-slate-900 shadow-xl">
+        <div className="profile-team-action-menu absolute right-0 top-9 z-50 w-40 overflow-hidden rounded-lg">
           <button
             type="button"
             onClick={() => {
@@ -1285,7 +1276,7 @@ const teamOverviewCard = (
               setRoleEditValue(member.role || "user");
               setOpenMemberMenuId(null);
             }}
-            className="block w-full px-3 py-2 text-left text-sm text-slate-300 transition hover:bg-slate-800 hover:text-white"
+            className="profile-team-action-change-role block w-full px-3 py-2 text-left text-sm transition-all"
           >
             Change Role
           </button>
@@ -1298,7 +1289,7 @@ const teamOverviewCard = (
               setRemoveMember(member);
               setOpenMemberMenuId(null);
             }}
-            className="block w-full px-3 py-2 text-left text-sm text-red-400 transition hover:bg-red-500/10"
+            className="profile-team-action-remove block w-full px-3 py-2 text-left text-sm transition-all"
           >
             Remove Member
           </button>
@@ -1313,18 +1304,18 @@ const teamOverviewCard = (
 
 {paginatedTeamMembers.length === 0 && (
   <div className="border-t border-slate-800 px-4 py-10 text-center">
-    <p className="text-sm font-medium text-slate-300">
+    <p className="profile-team-empty-title text-sm font-medium">
       No team members found
     </p>
 
-    <p className="mt-1 text-xs text-slate-500">
+    <p className="profile-team-empty-subtitle mt-1 text-xs">
       Try changing your search or role filter.
     </p>
   </div>
 )}
 
-<div className="flex items-center justify-between border-t border-slate-800 px-4 py-3 text-xs text-slate-400">
-  <span>
+<div className="profile-team-table-footer flex items-center justify-between px-4 py-3 text-xs">
+  <span className="profile-team-table-summary">
     Showing {filteredTeamMembers.length} of {totalMembers} members
   </span>
 
@@ -1333,7 +1324,7 @@ const teamOverviewCard = (
       type="button"
       onClick={() => setCurrentPage((page) => Math.max(1, page - 1))}
       disabled={currentPage === 1}
-      className="flex h-8 w-8 items-center justify-center rounded-md border border-slate-700 text-slate-300 disabled:cursor-not-allowed disabled:opacity-40"
+      className="profile-team-pagination-nav flex h-8 w-8 items-center justify-center rounded-md disabled:cursor-not-allowed disabled:opacity-40"
     >
       ‹
     </button>
@@ -1346,11 +1337,11 @@ const teamOverviewCard = (
           key={pageNumber}
           type="button"
           onClick={() => setCurrentPage(pageNumber)}
-          className={`flex h-8 w-8 items-center justify-center rounded-md border text-xs font-medium ${
-            currentPage === pageNumber
-              ? "border-violet-500 bg-violet-600 text-white"
-              : "border-slate-700 text-slate-300"
-          }`}
+          className={`profile-team-pagination-page flex h-8 w-8 items-center justify-center rounded-md text-xs font-medium ${
+          currentPage === pageNumber
+            ? "profile-team-pagination-page-active"
+            : "profile-team-pagination-page-idle"
+        }`}
         >
           {pageNumber}
         </button>
@@ -1363,7 +1354,7 @@ const teamOverviewCard = (
         setCurrentPage((page) => Math.min(totalPages, page + 1))
       }
       disabled={currentPage === totalPages}
-      className="flex h-8 w-8 items-center justify-center rounded-md border border-slate-700 text-slate-300 disabled:cursor-not-allowed disabled:opacity-40"
+      className="profile-team-pagination-nav flex h-8 w-8 items-center justify-center rounded-md disabled:cursor-not-allowed disabled:opacity-40"
     >
       ›
     </button>
@@ -1502,17 +1493,11 @@ const teamOverviewCard = (
               {/* Profile Details */}
               <div className="min-w-0">
                 <div className="flex flex-wrap items-center gap-3">
-                  <h2 className="
-                    truncate
-                    text-[24px]
-                    font-semibold
-                    tracking-[-0.015em]
-                    !text-[rgba(15,23,42,0.96)]
-                  ">
+                  <h2 className="profile-main-name truncate text-[24px] font-semibold tracking-[-0.015em]">
                     {profile.full_name || "User"}
                   </h2>
 
-                  <span className="rounded-full border border-violet-500/40 bg-violet-500/15 px-3 py-1 text-xs font-semibold text-violet-300">
+                  <span className="profile-main-role-badge rounded-full px-3 py-1 text-xs font-semibold">
                     {currentMember?.role === "admin"
                       ? "Admin"
                       : currentMember?.role === "sub_admin"
@@ -1520,13 +1505,13 @@ const teamOverviewCard = (
                         : "Employee"}
                   </span>
 
-                  <span className="flex items-center gap-2 text-sm text-slate-700">
+                  <span className="profile-main-status flex items-center gap-2 text-sm">
                     <span className="h-2.5 w-2.5 rounded-full bg-emerald-400" />
                     Online
                   </span>
                 </div>
 
-                <div className="mt-2 space-y-1.5 text-[13px] text-slate-700">
+                <div className="profile-main-meta mt-2 space-y-1.5 text-[13px]">
                   <div className="flex items-center gap-2">
                     <Mail size={14} className="shrink-0 text-slate-500" />
                     <span>{profile.email || "—"}</span>
@@ -1607,19 +1592,7 @@ const teamOverviewCard = (
                 setProfileSaveError("");
                 setIsEditingProfile(false);
               }}
-              className="
-              ml-2
-              inline-flex items-center justify-center
-              rounded-[15px]
-              border border-slate-700
-              bg-slate-800/70
-              px-4 py-2.5
-              text-sm font-semibold text-slate-300
-              transition
-              hover:bg-slate-700
-              disabled:cursor-not-allowed
-              disabled:opacity-50
-            "
+              className="profile-edit-cancel ml-2 inline-flex items-center justify-center rounded-[15px] px-4 py-2.5 text-sm font-semibold transition-all duration-200 disabled:cursor-not-allowed disabled:opacity-50"
             >
               Cancel
             </button>
@@ -1675,7 +1648,7 @@ const teamOverviewCard = (
                         />
                       </div>
                       <div className="min-w-0">
-                      <p className="text-[10px] font-bold uppercase tracking-[0.12em] text-slate-500">
+                      <p className="profile-info-label text-[10px] font-bold uppercase tracking-[0.12em]">
                         Email Address
                       </p>
                       {isEditingProfile ? (
@@ -1692,10 +1665,10 @@ const teamOverviewCard = (
                             email: e.target.value,
                           }))
                         }}
-                        className="mt-1 w-full rounded-lg border border-slate-700 bg-slate-950/60 px-2 py-1 text-[13px] font-semibold text-slate-200 outline-none focus:border-violet-500 disabled:cursor-not-allowed disabled:opacity-60"
+                       className="profile-edit-input mt-1 w-full rounded-lg px-2 py-1 text-[13px] font-semibold outline-none disabled:cursor-not-allowed disabled:opacity-60"
                       />
                     ) : (
-                      <p className="mt-1 whitespace-nowrap text-[13px] font-semibold text-slate-700">
+                      <p className="profile-info-value mt-1 whitespace-nowrap text-[13px] font-semibold">
                         {profile.email || "Not provided"}
                       </p>
                     )}
@@ -1734,7 +1707,7 @@ const teamOverviewCard = (
                         />
                       </div>
                       <div className="min-w-0">
-                      <p className="text-[10px] font-bold uppercase tracking-[0.12em] text-slate-500">
+                      <p className="profile-info-label text-[10px] font-bold uppercase tracking-[0.12em]">
                         Phone
                       </p>
 
@@ -1753,10 +1726,10 @@ const teamOverviewCard = (
                               phone: e.target.value,
                             }))
                           }}
-                          className="mt-1 w-full rounded-lg border border-slate-700 bg-slate-950/60 px-2 py-1 text-[13px] font-semibold text-slate-200 outline-none focus:border-violet-500 disabled:cursor-not-allowed disabled:opacity-60"
+                          className="profile-edit-input mt-1 w-full rounded-lg px-2 py-1 text-[13px] font-semibold outline-none disabled:cursor-not-allowed disabled:opacity-60"
                         />
                       ) : (
-                        <p className="mt-1 text-[13px] font-semibold text-slate-700">
+                        <p className="profile-info-value mt-1 text-[13px] font-semibold">
                           {profile.phone || "Not provided"}
                         </p>
                       )}
@@ -1795,7 +1768,7 @@ const teamOverviewCard = (
                         />
                       </div>
                       <div className="min-w-0">
-                      <p className="text-[10px] font-bold uppercase tracking-[0.12em] text-slate-500">
+                      <p className="profile-info-label text-[10px] font-bold uppercase tracking-[0.12em]">
                         Job Title
                       </p>
 
@@ -1813,10 +1786,10 @@ const teamOverviewCard = (
                             job_title: e.target.value,
                           }))
                         }}
-                        className="mt-1 w-full rounded-lg border border-slate-700 bg-slate-950/60 px-2 py-1 text-[13px] font-semibold text-slate-200 outline-none focus:border-violet-500 disabled:cursor-not-allowed disabled:opacity-60"
+                        className="profile-edit-input mt-1 w-full rounded-lg px-2 py-1 text-[13px] font-semibold outline-none disabled:cursor-not-allowed disabled:opacity-60"
                       />
                     ) : (
-                      <p className="mt-1 text-[13px] font-semibold text-slate-700">
+                      <p className="profile-info-value mt-1 text-[13px] font-semibold">
                         {profile.job_title || "Not provided"}
                       </p>
                     )}
@@ -1850,7 +1823,7 @@ const teamOverviewCard = (
                   shadow-[0_6px_18px_rgba(6,182,212,0.20)]
                 "> i </div>
               <div className="min-w-0">
-              <span className="text-[10px] font-bold uppercase tracking-[0.12em] text-slate-500">
+              <span className="profile-info-label text-[10px] font-bold uppercase tracking-[0.12em]">
               Bio
               </span>
               {isEditingProfile ? (
@@ -1867,14 +1840,14 @@ const teamOverviewCard = (
                     }))
                   }}
                   rows={3}
-                  className="mt-1 w-full resize-none rounded-lg border border-slate-700 bg-slate-950/60 px-3 py-2 text-[13px] text-slate-200 outline-none focus:border-violet-500 disabled:cursor-not-allowed disabled:opacity-60"
+                  className="profile-edit-input mt-1 w-full resize-none rounded-lg px-3 py-2 text-[13px] outline-none disabled:cursor-not-allowed disabled:opacity-60"
                 />
-                <p className="mt-1 text-right text-[11px] text-slate-500">
+                <p className="profile-bio-counter mt-1 text-right text-[11px]">
                 {profileForm.bio.length}/300
               </p>
               </>
               ) : (
-                <p className="profile-bio-text mt-1 whitespace-pre-wrap text-[14px] leading-7 text-slate-700">
+                <p className="profile-bio-text profile-info-value mt-1 whitespace-pre-wrap text-[14px] leading-7">
                   {profile.bio || "No bio added yet."}
                 </p>
               )}

@@ -751,6 +751,913 @@ html[data-theme="dark"] .profile-team-list-subtitle {
   color: rgba(148, 163, 184, 0.92) !important;
 }
 
+/* TEAM SEARCH INPUT -- LIGHT MODE */
+html:not(.dark):not([data-theme="dark"]) .profile-team-search {
+  background: rgba(248, 250, 252, 0.96) !important;
+  border: 1px solid rgba(148, 163, 184, 0.38) !important;
+  color: rgba(15, 23, 42, 0.96) !important;
+
+  box-shadow:
+    inset 0 1px 0 rgba(255, 255, 255, 0.90),
+    0 4px 12px rgba(15, 23, 42, 0.04) !important;
+}
+
+html:not(.dark):not([data-theme="dark"]) .profile-team-search::placeholder {
+  color: rgba(100, 116, 139, 0.72) !important;
+}
+
+/* TEAM SEARCH INPUT -- DARK MODE */
+html.dark .profile-team-search,
+html[data-theme="dark"] .profile-team-search {
+  background: rgba(15, 23, 42, 0.55) !important;
+  border: 1px solid rgba(51, 65, 85, 0.88) !important;
+  color: rgba(241, 245, 249, 0.96) !important;
+
+  box-shadow:
+    inset 0 1px 0 rgba(255, 255, 255, 0.03),
+    0 4px 12px rgba(0, 0, 0, 0.12) !important;
+}
+
+html.dark .profile-team-search::placeholder,
+html[data-theme="dark"] .profile-team-search::placeholder {
+  color: rgba(100, 116, 139, 0.90) !important;
+}
+
+.profile-team-search:focus {
+  border-color: rgba(139, 92, 246, 0.72) !important;
+}
+
+
+/* TEAM ROLE FILTER -- LIGHT MODE */
+html:not(.dark):not([data-theme="dark"]) .profile-team-role-filter {
+  background: rgba(248, 250, 252, 0.96) !important;
+  border: 1px solid rgba(148, 163, 184, 0.38) !important;
+  color: rgba(15, 23, 42, 0.96) !important;
+
+  box-shadow:
+    inset 0 1px 0 rgba(255, 255, 255, 0.90),
+    0 4px 12px rgba(15, 23, 42, 0.04) !important;
+}
+
+/* TEAM ROLE FILTER -- DARK MODE */
+html.dark .profile-team-role-filter,
+html[data-theme="dark"] .profile-team-role-filter {
+  background: rgba(15, 23, 42, 0.55) !important;
+  border: 1px solid rgba(51, 65, 85, 0.88) !important;
+  color: rgba(241, 245, 249, 0.96) !important;
+
+  box-shadow:
+    inset 0 1px 0 rgba(255, 255, 255, 0.03),
+    0 4px 12px rgba(0, 0, 0, 0.12) !important;
+}
+
+.profile-team-role-filter:focus {
+  border-color: rgba(139, 92, 246, 0.72) !important;
+}
+
+/* INVITE MEMBER BUTTON -- LIGHT MODE */
+html:not(.dark):not([data-theme="dark"]) .profile-invite-button {
+  background: rgba(124, 58, 237, 1) !important;
+  border: 1px solid rgba(139, 92, 246, 0.72) !important;
+  color: rgba(255, 255, 255, 1) !important;
+
+  box-shadow:
+    0 8px 24px rgba(124, 58, 237, 0.26),
+    inset 0 1px 0 rgba(255, 255, 255, 0.16) !important;
+}
+
+html:not(.dark):not([data-theme="dark"]) .profile-invite-button:hover {
+  background: rgba(109, 40, 217, 1) !important;
+  border-color: rgba(124, 58, 237, 0.90) !important;
+  transform: translateY(-1px);
+}
+
+
+/* INVITE MEMBER BUTTON -- DARK MODE */
+html.dark .profile-invite-button,
+html[data-theme="dark"] .profile-invite-button {
+  background: rgba(124, 58, 237, 1) !important;
+  border: 1px solid rgba(167, 139, 250, 0.62) !important;
+  color: rgba(255, 255, 255, 1) !important;
+
+  box-shadow:
+    0 8px 24px rgba(124, 58, 237, 0.32),
+    inset 0 1px 0 rgba(255, 255, 255, 0.12) !important;
+}
+
+html.dark .profile-invite-button:hover,
+html[data-theme="dark"] .profile-invite-button:hover {
+  background: rgba(139, 92, 246, 1) !important;
+  border-color: rgba(196, 181, 253, 0.82) !important;
+  transform: translateY(-1px);
+}
+
+/* TEAM TABLE -- LIGHT MODE */
+html:not(.dark):not([data-theme="dark"]) .profile-team-table {
+  background: rgba(255, 255, 255, 0.96) !important;
+  border: 1px solid rgba(148, 163, 184, 0.28) !important;
+
+  box-shadow:
+    0 6px 18px rgba(15, 23, 42, 0.04),
+    inset 0 1px 0 rgba(255, 255, 255, 0.90) !important;
+}
+
+/* TEAM TABLE -- DARK MODE */
+html.dark .profile-team-table,
+html[data-theme="dark"] .profile-team-table {
+  background: rgba(15, 23, 42, 0.34) !important;
+  border: 1px solid rgba(30, 41, 59, 1) !important;
+
+  box-shadow:
+    0 6px 18px rgba(0, 0, 0, 0.12),
+    inset 0 1px 0 rgba(255, 255, 255, 0.02) !important;
+}
+
+
+/* TEAM TABLE HEADER -- LIGHT MODE */
+html:not(.dark):not([data-theme="dark"]) .profile-team-table-head {
+  background: rgba(241, 245, 249, 0.96) !important;
+  color: rgba(71, 85, 105, 0.92) !important;
+
+  border-bottom: 1px solid rgba(148, 163, 184, 0.24) !important;
+}
+
+/* TEAM TABLE HEADER -- DARK MODE */
+html.dark .profile-team-table-head,
+html[data-theme="dark"] .profile-team-table-head {
+  background: rgba(30, 41, 59, 0.78) !important;
+  color: rgba(148, 163, 184, 0.96) !important;
+
+  border-bottom: 1px solid rgba(51, 65, 85, 0.72) !important;
+}
+
+/* TEAM TABLE ROW -- LIGHT MODE */
+html:not(.dark):not([data-theme="dark"]) .profile-team-table-row {
+  background: rgba(255, 255, 255, 0.98) !important;
+  border-top: 1px solid rgba(148, 163, 184, 0.22) !important;
+  color: rgba(51, 65, 85, 0.96) !important;
+}
+
+html:not(.dark):not([data-theme="dark"]) .profile-team-table-row:hover {
+  background: rgba(248, 250, 252, 0.98) !important;
+}
+
+
+/* TEAM TABLE ROW -- DARK MODE */
+html.dark .profile-team-table-row,
+html[data-theme="dark"] .profile-team-table-row {
+  background: rgba(15, 23, 42, 0.18) !important;
+  border-top: 1px solid rgba(30, 41, 59, 0.92) !important;
+  color: rgba(203, 213, 225, 0.96) !important;
+}
+
+html.dark .profile-team-table-row:hover,
+html[data-theme="dark"] .profile-team-table-row:hover {
+  background: rgba(30, 41, 59, 0.34) !important;
+}
+
+/* TEAM MEMBER NAME -- LIGHT MODE */
+html:not(.dark):not([data-theme="dark"]) .profile-team-member-name {
+  color: rgba(15, 23, 42, 0.96) !important;
+}
+
+/* TEAM MEMBER NAME -- DARK MODE */
+html.dark .profile-team-member-name,
+html[data-theme="dark"] .profile-team-member-name {
+  color: rgba(248, 250, 252, 0.98) !important;
+}
+
+/* TABLE ROLE BADGE — ADMIN — LIGHT */
+html:not(.dark):not([data-theme="dark"]) .profile-team-role-admin-badge {
+  background: rgba(245, 243, 255, 0.96) !important;
+  color: rgba(109, 40, 217, 0.96) !important;
+  border: 1px solid rgba(139, 92, 246, 0.28) !important;
+}
+
+/* TABLE ROLE BADGE — ADMIN — DARK */
+html.dark .profile-team-role-admin-badge,
+html[data-theme="dark"] .profile-team-role-admin-badge {
+  background: rgba(124, 58, 237, 0.16) !important;
+  color: rgba(196, 181, 253, 0.98) !important;
+  border: 1px solid rgba(139, 92, 246, 0.24) !important;
+}
+
+
+/* TABLE ROLE BADGE — SUB ADMIN — LIGHT */
+html:not(.dark):not([data-theme="dark"]) .profile-team-role-subadmin-badge {
+  background: rgba(239, 246, 255, 0.96) !important;
+  color: rgba(29, 78, 216, 0.96) !important;
+  border: 1px solid rgba(59, 130, 246, 0.28) !important;
+}
+
+/* TABLE ROLE BADGE — SUB ADMIN — DARK */
+html.dark .profile-team-role-subadmin-badge,
+html[data-theme="dark"] .profile-team-role-subadmin-badge {
+  background: rgba(37, 99, 235, 0.16) !important;
+  color: rgba(147, 197, 253, 0.98) !important;
+  border: 1px solid rgba(59, 130, 246, 0.24) !important;
+}
+
+
+/* TABLE ROLE BADGE — EMPLOYEE — LIGHT */
+html:not(.dark):not([data-theme="dark"]) .profile-team-role-employee-badge {
+  background: rgba(236, 253, 245, 0.96) !important;
+  color: rgba(4, 120, 87, 0.96) !important;
+  border: 1px solid rgba(16, 185, 129, 0.28) !important;
+}
+
+/* TABLE ROLE BADGE — EMPLOYEE — DARK */
+html.dark .profile-team-role-employee-badge,
+html[data-theme="dark"] .profile-team-role-employee-badge {
+  background: rgba(5, 150, 105, 0.16) !important;
+  color: rgba(110, 231, 183, 0.98) !important;
+  border: 1px solid rgba(16, 185, 129, 0.24) !important;
+}
+
+/* TEAM MEMBER EMAIL -- LIGHT MODE */
+html:not(.dark):not([data-theme="dark"]) .profile-team-member-email {
+  color: rgba(51, 65, 85, 0.92) !important;
+}
+
+/* TEAM MEMBER EMAIL -- DARK MODE */
+html.dark .profile-team-member-email,
+html[data-theme="dark"] .profile-team-member-email {
+  color: rgba(203, 213, 225, 0.96) !important;
+}
+
+/* TEAM MEMBER PHONE -- LIGHT MODE */
+html:not(.dark):not([data-theme="dark"]) .profile-team-member-phone {
+  color: rgba(51, 65, 85, 0.92) !important;
+}
+
+/* TEAM MEMBER PHONE -- DARK MODE */
+html.dark .profile-team-member-phone,
+html[data-theme="dark"] .profile-team-member-phone {
+  color: rgba(203, 213, 225, 0.96) !important;
+}
+
+
+/* TEAM MEMBER STATUS -- ACTIVE -- LIGHT MODE */
+html:not(.dark):not([data-theme="dark"]) .profile-team-status-active {
+  color: rgba(5, 150, 105, 0.96) !important;
+}
+
+/* TEAM MEMBER STATUS -- ACTIVE -- DARK MODE */
+html.dark .profile-team-status-active,
+html[data-theme="dark"] .profile-team-status-active {
+  color: rgba(52, 211, 153, 0.98) !important;
+}
+
+
+/* TEAM MEMBER STATUS -- OFFLINE -- LIGHT MODE */
+html:not(.dark):not([data-theme="dark"]) .profile-team-status-offline {
+  color: rgba(100, 116, 139, 0.92) !important;
+}
+
+/* TEAM MEMBER STATUS -- OFFLINE -- DARK MODE */
+html.dark .profile-team-status-offline,
+html[data-theme="dark"] .profile-team-status-offline {
+  color: rgba(148, 163, 184, 0.94) !important;
+}
+
+/* TEAM ACTION BUTTON -- LIGHT MODE */
+html:not(.dark):not([data-theme="dark"]) .profile-team-action-button {
+  background: rgba(248, 250, 252, 0.96) !important;
+  border: 1px solid rgba(148, 163, 184, 0.28) !important;
+  color: rgba(71, 85, 105, 0.92) !important;
+}
+
+html:not(.dark):not([data-theme="dark"]) .profile-team-action-button:hover {
+  background: rgba(241, 245, 249, 1) !important;
+  border-color: rgba(100, 116, 139, 0.40) !important;
+  color: rgba(15, 23, 42, 0.98) !important;
+}
+
+
+/* TEAM ACTION BUTTON -- DARK MODE */
+html.dark .profile-team-action-button,
+html[data-theme="dark"] .profile-team-action-button {
+  background: rgba(15, 23, 42, 0.32) !important;
+  border: 1px solid rgba(51, 65, 85, 0.55) !important;
+  color: rgba(148, 163, 184, 0.96) !important;
+}
+
+html.dark .profile-team-action-button:hover,
+html[data-theme="dark"] .profile-team-action-button:hover {
+  background: rgba(30, 41, 59, 0.78) !important;
+  border-color: rgba(71, 85, 105, 0.78) !important;
+  color: rgba(248, 250, 252, 0.98) !important;
+}
+
+/* TEAM ACTION MENU -- LIGHT MODE */
+html:not(.dark):not([data-theme="dark"]) .profile-team-action-menu {
+  background: rgba(255, 255, 255, 0.98) !important;
+  border: 1px solid rgba(148, 163, 184, 0.30) !important;
+
+  box-shadow:
+    0 14px 32px rgba(15, 23, 42, 0.12),
+    inset 0 1px 0 rgba(255, 255, 255, 0.90) !important;
+}
+
+/* TEAM ACTION MENU -- DARK MODE */
+html.dark .profile-team-action-menu,
+html[data-theme="dark"] .profile-team-action-menu {
+  background: rgba(15, 23, 42, 0.98) !important;
+  border: 1px solid rgba(51, 65, 85, 0.82) !important;
+
+  box-shadow:
+    0 14px 32px rgba(0, 0, 0, 0.32),
+    inset 0 1px 0 rgba(255, 255, 255, 0.03) !important;
+}
+
+/* TEAM ACTION — CHANGE ROLE — LIGHT MODE */
+html:not(.dark):not([data-theme="dark"]) .profile-team-action-change-role {
+  color: rgba(51, 65, 85, 0.96) !important;
+  background: transparent !important;
+}
+
+html:not(.dark):not([data-theme="dark"]) .profile-team-action-change-role:hover {
+  background: rgba(241, 245, 249, 0.96) !important;
+  color: rgba(15, 23, 42, 0.98) !important;
+}
+
+
+/* TEAM ACTION — CHANGE ROLE — DARK MODE */
+html.dark .profile-team-action-change-role,
+html[data-theme="dark"] .profile-team-action-change-role {
+  color: rgba(203, 213, 225, 0.96) !important;
+  background: transparent !important;
+}
+
+html.dark .profile-team-action-change-role:hover,
+html[data-theme="dark"] .profile-team-action-change-role:hover {
+  background: rgba(30, 41, 59, 0.82) !important;
+  color: rgba(248, 250, 252, 0.98) !important;
+}
+
+/* TEAM ACTION — REMOVE MEMBER — LIGHT MODE */
+html:not(.dark):not([data-theme="dark"]) .profile-team-action-remove {
+  color: rgba(220, 38, 38, 0.96) !important;
+  background: transparent !important;
+}
+
+html:not(.dark):not([data-theme="dark"]) .profile-team-action-remove:hover {
+  background: rgba(254, 226, 226, 0.78) !important;
+  color: rgba(185, 28, 28, 1) !important;
+}
+
+
+/* TEAM ACTION — REMOVE MEMBER — DARK MODE */
+html.dark .profile-team-action-remove,
+html[data-theme="dark"] .profile-team-action-remove {
+  color: rgba(248, 113, 113, 0.98) !important;
+  background: transparent !important;
+}
+
+html.dark .profile-team-action-remove:hover,
+html[data-theme="dark"] .profile-team-action-remove:hover {
+  background: rgba(127, 29, 29, 0.28) !important;
+  color: rgba(254, 202, 202, 1) !important;
+}
+
+/* TEAM TABLE ROW INDEX -- LIGHT MODE */
+html:not(.dark):not([data-theme="dark"]) .profile-team-row-index {
+  color: rgba(71, 85, 105, 0.88) !important;
+}
+
+/* TEAM TABLE ROW INDEX -- DARK MODE */
+html.dark .profile-team-row-index,
+html[data-theme="dark"] .profile-team-row-index {
+  color: rgba(203, 213, 225, 0.94) !important;
+}
+
+/* TEAM "YOU" BADGE -- LIGHT MODE */
+html:not(.dark):not([data-theme="dark"]) .profile-team-you-badge {
+  background: rgba(226, 232, 240, 0.92) !important;
+  color: rgba(51, 65, 85, 0.96) !important;
+  border: 1px solid rgba(148, 163, 184, 0.24) !important;
+}
+
+/* TEAM "YOU" BADGE -- DARK MODE */
+html.dark .profile-team-you-badge,
+html[data-theme="dark"] .profile-team-you-badge {
+  background: rgba(51, 65, 85, 0.88) !important;
+  color: rgba(226, 232, 240, 0.98) !important;
+  border: 1px solid rgba(71, 85, 105, 0.60) !important;
+}
+
+/* TEAM TABLE SUMMARY -- LIGHT MODE */
+html:not(.dark):not([data-theme="dark"]) .profile-team-table-summary {
+  color: rgba(71, 85, 105, 0.88) !important;
+}
+
+/* TEAM TABLE SUMMARY -- DARK MODE */
+html.dark .profile-team-table-summary,
+html[data-theme="dark"] .profile-team-table-summary {
+  color: rgba(148, 163, 184, 0.94) !important;
+}
+
+
+/* TEAM PAGINATION NAV -- LIGHT MODE */
+html:not(.dark):not([data-theme="dark"]) .profile-team-pagination-nav {
+  background: rgba(248, 250, 252, 0.96) !important;
+  border: 1px solid rgba(148, 163, 184, 0.32) !important;
+  color: rgba(71, 85, 105, 0.94) !important;
+}
+
+html:not(.dark):not([data-theme="dark"]) .profile-team-pagination-nav:hover:not(:disabled) {
+  background: rgba(241, 245, 249, 1) !important;
+  border-color: rgba(100, 116, 139, 0.42) !important;
+  color: rgba(15, 23, 42, 0.98) !important;
+}
+
+
+/* TEAM PAGINATION NAV -- DARK MODE */
+html.dark .profile-team-pagination-nav,
+html[data-theme="dark"] .profile-team-pagination-nav {
+  background: rgba(15, 23, 42, 0.34) !important;
+  border: 1px solid rgba(51, 65, 85, 0.72) !important;
+  color: rgba(203, 213, 225, 0.94) !important;
+}
+
+html.dark .profile-team-pagination-nav:hover:not(:disabled),
+html[data-theme="dark"] .profile-team-pagination-nav:hover:not(:disabled) {
+  background: rgba(30, 41, 59, 0.82) !important;
+  border-color: rgba(71, 85, 105, 0.86) !important;
+  color: rgba(248, 250, 252, 0.98) !important;
+}
+
+/* TEAM PAGINATION PAGE -- LIGHT MODE */
+html:not(.dark):not([data-theme="dark"]) .profile-team-pagination-page-idle {
+  background: rgba(248, 250, 252, 0.96) !important;
+  border: 1px solid rgba(148, 163, 184, 0.32) !important;
+  color: rgba(71, 85, 105, 0.94) !important;
+}
+
+html:not(.dark):not([data-theme="dark"]) .profile-team-pagination-page-idle:hover {
+  background: rgba(241, 245, 249, 1) !important;
+  border-color: rgba(100, 116, 139, 0.42) !important;
+  color: rgba(15, 23, 42, 0.98) !important;
+}
+
+html:not(.dark):not([data-theme="dark"]) .profile-team-pagination-page-active {
+  background: rgba(124, 58, 237, 1) !important;
+  border: 1px solid rgba(139, 92, 246, 0.72) !important;
+  color: rgba(255, 255, 255, 1) !important;
+
+  box-shadow:
+    0 6px 18px rgba(124, 58, 237, 0.22),
+    inset 0 1px 0 rgba(255, 255, 255, 0.16) !important;
+}
+
+
+/* TEAM PAGINATION PAGE -- DARK MODE */
+html.dark .profile-team-pagination-page-idle,
+html[data-theme="dark"] .profile-team-pagination-page-idle {
+  background: rgba(15, 23, 42, 0.34) !important;
+  border: 1px solid rgba(51, 65, 85, 0.72) !important;
+  color: rgba(203, 213, 225, 0.94) !important;
+}
+
+html.dark .profile-team-pagination-page-idle:hover,
+html[data-theme="dark"] .profile-team-pagination-page-idle:hover {
+  background: rgba(30, 41, 59, 0.82) !important;
+  border-color: rgba(71, 85, 105, 0.86) !important;
+  color: rgba(248, 250, 252, 0.98) !important;
+}
+
+html.dark .profile-team-pagination-page-active,
+html[data-theme="dark"] .profile-team-pagination-page-active {
+  background: rgba(124, 58, 237, 1) !important;
+  border: 1px solid rgba(167, 139, 250, 0.62) !important;
+  color: rgba(255, 255, 255, 1) !important;
+
+  box-shadow:
+    0 6px 18px rgba(124, 58, 237, 0.28),
+    inset 0 1px 0 rgba(255, 255, 255, 0.12) !important;
+}
+
+/* TEAM TABLE FOOTER -- LIGHT MODE */
+html:not(.dark):not([data-theme="dark"]) .profile-team-table-footer {
+  background: rgba(248, 250, 252, 0.92) !important;
+  border-top: 1px solid rgba(148, 163, 184, 0.24) !important;
+  color: rgba(71, 85, 105, 0.90) !important;
+}
+
+/* TEAM TABLE FOOTER -- DARK MODE */
+html.dark .profile-team-table-footer,
+html[data-theme="dark"] .profile-team-table-footer {
+  background: rgba(15, 23, 42, 0.26) !important;
+  border-top: 1px solid rgba(30, 41, 59, 0.92) !important;
+  color: rgba(148, 163, 184, 0.94) !important;
+}
+
+/* PROFILE TABS -- LIGHT MODE */
+html:not(.dark):not([data-theme="dark"]) .profile-tabs {
+  border-bottom: 1px solid rgba(148, 163, 184, 0.26) !important;
+}
+
+/* PROFILE TABS -- DARK MODE */
+html.dark .profile-tabs,
+html[data-theme="dark"] .profile-tabs {
+  border-bottom: 1px solid rgba(30, 41, 59, 0.96) !important;
+}
+
+/* PROFILE TAB -- ACTIVE -- LIGHT MODE */
+html:not(.dark):not([data-theme="dark"]) .profile-tab-active {
+  border-color: rgba(139, 92, 246, 0.92) !important;
+  color: rgba(109, 40, 217, 0.98) !important;
+}
+
+/* PROFILE TAB -- ACTIVE -- DARK MODE */
+html.dark .profile-tab-active,
+html[data-theme="dark"] .profile-tab-active {
+  border-color: rgba(139, 92, 246, 0.95) !important;
+  color: rgba(196, 181, 253, 0.98) !important;
+}
+
+
+/* PROFILE TAB -- IDLE -- LIGHT MODE */
+html:not(.dark):not([data-theme="dark"]) .profile-tab-idle {
+  border-color: transparent !important;
+  color: rgba(100, 116, 139, 0.92) !important;
+}
+
+html:not(.dark):not([data-theme="dark"]) .profile-tab-idle:hover {
+  color: rgba(30, 41, 59, 0.98) !important;
+}
+
+
+/* PROFILE TAB -- IDLE -- DARK MODE */
+html.dark .profile-tab-idle,
+html[data-theme="dark"] .profile-tab-idle {
+  border-color: transparent !important;
+  color: rgba(100, 116, 139, 0.96) !important;
+}
+
+html.dark .profile-tab-idle:hover,
+html[data-theme="dark"] .profile-tab-idle:hover {
+  color: rgba(248, 250, 252, 0.98) !important;
+}
+
+/* PROFILE PAGE TITLE -- LIGHT MODE */
+html:not(.dark):not([data-theme="dark"]) .profile-page-title {
+  color: rgba(15, 23, 42, 0.96) !important;
+}
+
+/* PROFILE PAGE TITLE -- DARK MODE */
+html.dark .profile-page-title,
+html[data-theme="dark"] .profile-page-title {
+  color: rgba(248, 250, 252, 0.98) !important;
+}
+
+/* TEAM OVERVIEW TOTAL NUMBER -- LIGHT MODE */
+html:not(.dark):not([data-theme="dark"]) .profile-team-total-number {
+  color: rgba(15, 23, 42, 0.96) !important;
+}
+
+/* TEAM OVERVIEW TOTAL NUMBER -- DARK MODE */
+html.dark .profile-team-total-number,
+html[data-theme="dark"] .profile-team-total-number {
+  color: rgba(248, 250, 252, 0.98) !important;
+}
+
+/* ROLE CARD COUNT -- LIGHT MODE */
+html:not(.dark):not([data-theme="dark"]) .profile-role-count {
+  color: rgba(15, 23, 42, 0.96) !important;
+}
+
+/* ROLE CARD COUNT -- DARK MODE */
+html.dark .profile-role-count,
+html[data-theme="dark"] .profile-role-count {
+  color: rgba(248, 250, 252, 0.98) !important;
+}
+
+/* ADMIN ROLE LABEL -- LIGHT MODE */
+html:not(.dark):not([data-theme="dark"]) .profile-role-admin-label {
+  color: rgba(109, 40, 217, 0.96) !important;
+}
+
+/* ADMIN ROLE LABEL -- DARK MODE */
+html.dark .profile-role-admin-label,
+html[data-theme="dark"] .profile-role-admin-label {
+  color: rgba(196, 181, 253, 0.98) !important;
+}
+
+/* SUB ADMIN ROLE LABEL -- LIGHT MODE */
+html:not(.dark):not([data-theme="dark"]) .profile-role-subadmin-label {
+  color: rgba(29, 78, 216, 0.96) !important;
+}
+
+/* SUB ADMIN ROLE LABEL -- DARK MODE */
+html.dark .profile-role-subadmin-label,
+html[data-theme="dark"] .profile-role-subadmin-label {
+  color: rgba(147, 197, 253, 0.98) !important;
+}
+
+/* EMPLOYEE ROLE LABEL -- LIGHT MODE */
+html:not(.dark):not([data-theme="dark"]) .profile-role-employee-label {
+  color: rgba(4, 120, 87, 0.96) !important;
+}
+
+/* EMPLOYEE ROLE LABEL -- DARK MODE */
+html.dark .profile-role-employee-label,
+html[data-theme="dark"] .profile-role-employee-label {
+  color: rgba(110, 231, 183, 0.98) !important;
+}
+
+/* TEAM ACTIVE NOW -- LIGHT MODE */
+html:not(.dark):not([data-theme="dark"]) .profile-team-active-now {
+  color: rgba(71, 85, 105, 0.88) !important;
+}
+
+/* TEAM ACTIVE NOW -- DARK MODE */
+html.dark .profile-team-active-now,
+html[data-theme="dark"] .profile-team-active-now {
+  color: rgba(148, 163, 184, 0.92) !important;
+}
+
+/* TEAM OVERVIEW ICON -- LIGHT MODE */
+html:not(.dark):not([data-theme="dark"]) .profile-team-overview-icon {
+  background: rgba(245, 243, 255, 0.96) !important;
+  border: 1px solid rgba(139, 92, 246, 0.28) !important;
+  color: rgba(109, 40, 217, 0.96) !important;
+
+  box-shadow:
+    0 6px 16px rgba(124, 58, 237, 0.08),
+    inset 0 1px 0 rgba(255, 255, 255, 0.90) !important;
+}
+
+/* TEAM OVERVIEW ICON -- DARK MODE */
+html.dark .profile-team-overview-icon,
+html[data-theme="dark"] .profile-team-overview-icon {
+  background: rgba(30, 41, 59, 0.78) !important;
+  border: 1px solid rgba(71, 85, 105, 0.70) !important;
+  color: rgba(196, 181, 253, 0.98) !important;
+
+  box-shadow:
+    0 6px 16px rgba(0, 0, 0, 0.16),
+    inset 0 1px 0 rgba(255, 255, 255, 0.04) !important;
+}
+
+/* PROFILE BREADCRUMB -- LIGHT MODE */
+html:not(.dark):not([data-theme="dark"]) .profile-breadcrumb {
+  color: rgba(100, 116, 139, 0.88) !important;
+}
+
+html:not(.dark):not([data-theme="dark"]) .profile-breadcrumb-current {
+  color: rgba(51, 65, 85, 0.96) !important;
+}
+
+/* PROFILE BREADCRUMB -- DARK MODE */
+html.dark .profile-breadcrumb,
+html[data-theme="dark"] .profile-breadcrumb {
+  color: rgba(148, 163, 184, 0.92) !important;
+}
+
+html.dark .profile-breadcrumb-current,
+html[data-theme="dark"] .profile-breadcrumb-current {
+  color: rgba(226, 232, 240, 0.98) !important;
+}
+
+/* PROFILE PAGE SUBTITLE -- LIGHT MODE */
+html:not(.dark):not([data-theme="dark"]) .profile-page-subtitle {
+  color: rgba(71, 85, 105, 0.88) !important;
+}
+
+/* PROFILE PAGE SUBTITLE -- DARK MODE */
+html.dark .profile-page-subtitle,
+html[data-theme="dark"] .profile-page-subtitle {
+  color: rgba(148, 163, 184, 0.92) !important;
+}
+
+/* PROFILE MAIN NAME -- LIGHT MODE */
+html:not(.dark):not([data-theme="dark"]) .profile-main-name {
+  color: rgba(15, 23, 42, 0.96) !important;
+}
+
+/* PROFILE MAIN NAME -- DARK MODE */
+html.dark .profile-main-name,
+html[data-theme="dark"] .profile-main-name {
+  color: rgba(248, 250, 252, 0.98) !important;
+}
+
+/* PROFILE MAIN META -- LIGHT MODE */
+html:not(.dark):not([data-theme="dark"]) .profile-main-meta,
+html:not(.dark):not([data-theme="dark"]) .profile-main-meta span,
+html:not(.dark):not([data-theme="dark"]) .profile-main-meta div,
+html:not(.dark):not([data-theme="dark"]) .profile-main-meta svg {
+  color: rgba(71, 85, 105, 0.94) !important;
+}
+
+/* PROFILE MAIN META -- DARK MODE */
+html.dark .profile-main-meta,
+html.dark .profile-main-meta span,
+html.dark .profile-main-meta div,
+html.dark .profile-main-meta svg,
+html[data-theme="dark"] .profile-main-meta,
+html[data-theme="dark"] .profile-main-meta span,
+html[data-theme="dark"] .profile-main-meta div,
+html[data-theme="dark"] .profile-main-meta svg {
+  color: rgba(203, 213, 225, 0.94) !important;
+}
+
+/* PROFILE MAIN STATUS -- LIGHT MODE */
+html:not(.dark):not([data-theme="dark"]) .profile-main-status {
+  color: rgba(71, 85, 105, 0.94) !important;
+}
+
+/* PROFILE MAIN STATUS -- DARK MODE */
+html.dark .profile-main-status,
+html[data-theme="dark"] .profile-main-status {
+  color: rgba(203, 213, 225, 0.96) !important;
+}
+
+
+/* PROFILE MAIN ROLE BADGE -- LIGHT MODE */
+html:not(.dark):not([data-theme="dark"]) .profile-main-role-badge {
+  background: rgba(245, 243, 255, 0.96) !important;
+  border: 1px solid rgba(139, 92, 246, 0.34) !important;
+  color: rgba(109, 40, 217, 0.96) !important;
+}
+
+/* PROFILE MAIN ROLE BADGE -- DARK MODE */
+html.dark .profile-main-role-badge,
+html[data-theme="dark"] .profile-main-role-badge {
+  background: rgba(124, 58, 237, 0.16) !important;
+  border: 1px solid rgba(139, 92, 246, 0.42) !important;
+  color: rgba(196, 181, 253, 0.98) !important;
+}
+
+/* PROFILE INFO LABEL -- LIGHT MODE */
+html:not(.dark):not([data-theme="dark"]) .profile-info-label {
+  color: rgba(71, 85, 105, 0.78) !important;
+}
+
+/* PROFILE INFO LABEL -- DARK MODE */
+html.dark .profile-info-label,
+html[data-theme="dark"] .profile-info-label {
+  color: rgba(148, 163, 184, 0.88) !important;
+}
+
+/* PROFILE INFO VALUE -- LIGHT MODE */
+html:not(.dark):not([data-theme="dark"]) .profile-info-value {
+  color: rgba(51, 65, 85, 0.96) !important;
+}
+
+/* PROFILE INFO VALUE -- DARK MODE */
+html.dark .profile-info-value,
+html[data-theme="dark"] .profile-info-value {
+  color: rgba(203, 213, 225, 0.98) !important;
+}
+
+/* PROFILE EDIT INPUT -- LIGHT MODE */
+html:not(.dark):not([data-theme="dark"]) .profile-edit-input {
+  background: rgba(255, 255, 255, 0.96) !important;
+  border: 1px solid rgba(148, 163, 184, 0.34) !important;
+  color: rgba(15, 23, 42, 0.96) !important;
+}
+
+html:not(.dark):not([data-theme="dark"]) .profile-edit-input:focus {
+  border-color: rgba(139, 92, 246, 0.78) !important;
+  box-shadow: 0 0 0 3px rgba(139, 92, 246, 0.10) !important;
+}
+
+/* PROFILE EDIT INPUT -- DARK MODE */
+html.dark .profile-edit-input,
+html[data-theme="dark"] .profile-edit-input {
+  background: rgba(15, 23, 42, 0.62) !important;
+  border: 1px solid rgba(51, 65, 85, 0.88) !important;
+  color: rgba(241, 245, 249, 0.98) !important;
+}
+
+html.dark .profile-edit-input:focus,
+html[data-theme="dark"] .profile-edit-input:focus {
+  border-color: rgba(139, 92, 246, 0.82) !important;
+  box-shadow: 0 0 0 3px rgba(139, 92, 246, 0.12) !important;
+}
+
+/* PROFILE BIO COUNTER -- LIGHT MODE */
+html:not(.dark):not([data-theme="dark"]) .profile-bio-counter {
+  color: rgba(100, 116, 139, 0.82) !important;
+}
+
+/* PROFILE BIO COUNTER -- DARK MODE */
+html.dark .profile-bio-counter,
+html[data-theme="dark"] .profile-bio-counter {
+  color: rgba(148, 163, 184, 0.88) !important;
+}
+
+/* PROFILE EDIT CANCEL -- LIGHT MODE */
+html:not(.dark):not([data-theme="dark"]) .profile-edit-cancel {
+  background: rgba(248, 250, 252, 0.96) !important;
+  border: 1px solid rgba(148, 163, 184, 0.34) !important;
+  color: rgba(51, 65, 85, 0.96) !important;
+}
+
+html:not(.dark):not([data-theme="dark"]) .profile-edit-cancel:hover {
+  background: rgba(241, 245, 249, 1) !important;
+  border-color: rgba(100, 116, 139, 0.42) !important;
+  color: rgba(15, 23, 42, 0.98) !important;
+}
+
+
+/* PROFILE EDIT CANCEL -- DARK MODE */
+html.dark .profile-edit-cancel,
+html[data-theme="dark"] .profile-edit-cancel {
+  background: rgba(30, 41, 59, 0.72) !important;
+  border: 1px solid rgba(51, 65, 85, 0.88) !important;
+  color: rgba(203, 213, 225, 0.96) !important;
+}
+
+html.dark .profile-edit-cancel:hover,
+html[data-theme="dark"] .profile-edit-cancel:hover {
+  background: rgba(51, 65, 85, 0.82) !important;
+  border-color: rgba(71, 85, 105, 0.92) !important;
+  color: rgba(248, 250, 252, 0.98) !important;
+}
+
+/* INVITE MODAL CANCEL -- LIGHT MODE */
+html:not(.dark):not([data-theme="dark"]) .profile-invite-cancel {
+  background: rgba(248, 250, 252, 0.96) !important;
+  border: 1px solid rgba(148, 163, 184, 0.34) !important;
+  color: rgba(51, 65, 85, 0.96) !important;
+}
+
+html:not(.dark):not([data-theme="dark"]) .profile-invite-cancel:hover {
+  background: rgba(241, 245, 249, 1) !important;
+  color: rgba(15, 23, 42, 0.98) !important;
+}
+
+
+/* INVITE MODAL CANCEL -- DARK MODE */
+html.dark .profile-invite-cancel,
+html[data-theme="dark"] .profile-invite-cancel {
+  background: rgba(30, 41, 59, 0.72) !important;
+  border: 1px solid rgba(51, 65, 85, 0.88) !important;
+  color: rgba(203, 213, 225, 0.96) !important;
+}
+
+html.dark .profile-invite-cancel:hover,
+html[data-theme="dark"] .profile-invite-cancel:hover {
+  background: rgba(51, 65, 85, 0.82) !important;
+  color: rgba(248, 250, 252, 0.98) !important;
+}
+
+/* TEAM EMPTY TITLE -- LIGHT MODE */
+html:not(.dark):not([data-theme="dark"]) .profile-team-empty-title {
+  color: rgba(51, 65, 85, 0.96) !important;
+}
+
+/* TEAM EMPTY TITLE -- DARK MODE */
+html.dark .profile-team-empty-title,
+html[data-theme="dark"] .profile-team-empty-title {
+  color: rgba(226, 232, 240, 0.98) !important;
+}
+
+/* TEAM EMPTY SUBTITLE -- LIGHT MODE */
+html:not(.dark):not([data-theme="dark"]) .profile-team-empty-subtitle {
+  color: rgba(100, 116, 139, 0.88) !important;
+}
+
+/* TEAM EMPTY SUBTITLE -- DARK MODE */
+html.dark .profile-team-empty-subtitle,
+html[data-theme="dark"] .profile-team-empty-subtitle {
+  color: rgba(148, 163, 184, 0.90) !important;
+}
+
+/* INVITE MODAL -- LIGHT MODE */
+html:not(.dark):not([data-theme="dark"]) .profile-invite-modal {
+  background: rgba(255, 255, 255, 0.98) !important;
+  border: 1px solid rgba(148, 163, 184, 0.28) !important;
+
+  box-shadow:
+    0 24px 60px rgba(15, 23, 42, 0.16),
+    inset 0 1px 0 rgba(255, 255, 255, 0.92) !important;
+}
+
+/* INVITE MODAL -- DARK MODE */
+html.dark .profile-invite-modal,
+html[data-theme="dark"] .profile-invite-modal {
+  background: rgba(15, 23, 42, 0.98) !important;
+  border: 1px solid rgba(51, 65, 85, 0.82) !important;
+
+  box-shadow:
+    0 24px 60px rgba(0, 0, 0, 0.36),
+    inset 0 1px 0 rgba(255, 255, 255, 0.03) !important;
+}
+
+/* INVITE MODAL TITLE -- LIGHT MODE */
+html:not(.dark):not([data-theme="dark"]) .profile-invite-modal-title {
+  color: rgba(15, 23, 42, 0.96) !important;
+}
+
+/* INVITE MODAL TITLE -- DARK MODE */
+html.dark .profile-invite-modal-title,
+html[data-theme="dark"] .profile-invite-modal-title {
+  color: rgba(248, 250, 252, 0.98) !important;
+}
+
 /* Email / Phone / Job / Bio cards */
 html.dark .profile-info-panel .grid > div,
 html[data-theme="dark"] .profile-info-panel .grid > div {
