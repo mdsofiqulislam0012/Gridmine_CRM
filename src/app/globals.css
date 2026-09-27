@@ -1,4 +1,6 @@
 @import "tailwindcss";
+@custom-variant dark (&:where(.dark, .dark *, [data-theme="dark"], [data-theme="dark"] *));
+
 
 :root {
   --background: #f4f5f7;
@@ -505,6 +507,25 @@ html[data-theme="dark"] .profile-theme-page .text-gray-400 {
   color: #94a3b8 !important;
 }
 
+/* PROFILE CARD DEPTH */
+html:not(.dark):not([data-theme="dark"]) .profile-card-depth {
+  display: none !important;
+}
+
+  html.dark .profile-card-depth,
+  html[data-theme="dark"] .profile-card-depth {
+  display: none !important;
+}
+
+/* PROFILE CARD AMBIENT LIGHT */
+html:not(.dark):not([data-theme="dark"]) .profile-card-ambient {
+  display: none !important;
+}
+
+html.dark .profile-card-ambient,
+html[data-theme="dark"] .profile-card-ambient {
+  display: block !important;
+}
 
 /* PROFILE 3D CARD -- LIGHT MODE */
 html:not(.dark):not([data-theme="dark"]) .profile-main-card {
@@ -518,9 +539,7 @@ html:not(.dark):not([data-theme="dark"]) .profile-main-card {
 
   border: 1px solid rgba(148, 163, 184, 0.32) !important;
 
-  box-shadow:
-    0 16px 40px rgba(15, 23, 42, 0.08),
-    inset 0 1px 0 rgba(255, 255, 255, 0.85) !important;
+  box-shadow: none !important;
 }
 
 /* =========================================
@@ -539,11 +558,7 @@ html[data-theme="dark"] .profile-main-card {
 
   border-color: #3b4a61 !important;
 
-  box-shadow:
-    0 32px 75px rgba(0, 0, 0, 0.48),
-    0 12px 30px rgba(0, 0, 0, 0.30),
-    inset 0 2px 3px rgba(255, 255, 255, 0.06),
-    inset 0 -3px 8px rgba(0, 0, 0, 0.20) !important;
+ box-shadow: none !important;
 }
 
 /* TEAM OVERVIEW -- LIGHT MODE */
@@ -1289,10 +1304,11 @@ html:not(.dark):not([data-theme="dark"]) .profile-tab-idle:hover {
 
 
 /* PROFILE TAB -- IDLE -- DARK MODE */
+/* PROFILE TAB -- IDLE -- DARK MODE */
 html.dark .profile-tab-idle,
 html[data-theme="dark"] .profile-tab-idle {
   border-color: transparent !important;
-  color: rgba(100, 116, 139, 0.96) !important;
+  color: rgba(148, 163, 184, 0.96) !important;
 }
 
 html.dark .profile-tab-idle:hover,
@@ -1657,6 +1673,431 @@ html.dark .profile-invite-modal-title,
 html[data-theme="dark"] .profile-invite-modal-title {
   color: rgba(248, 250, 252, 0.98) !important;
 }
+
+/* ROLE EDIT SUBTITLE -- LIGHT MODE */
+html:not(.dark):not([data-theme="dark"]) .profile-role-edit-subtitle {
+  color: rgba(71, 85, 105, 0.90) !important;
+}
+
+/* ROLE EDIT SUBTITLE -- DARK MODE */
+html.dark .profile-role-edit-subtitle,
+html[data-theme="dark"] .profile-role-edit-subtitle {
+  color: rgba(148, 163, 184, 0.94) !important;
+}
+
+/* ROLE EDIT TITLE -- LIGHT MODE */
+html:not(.dark):not([data-theme="dark"]) .profile-role-edit-title {
+  color: rgba(15, 23, 42, 0.96) !important;
+}
+
+/* ROLE EDIT TITLE -- DARK MODE */
+html.dark .profile-role-edit-title,
+html[data-theme="dark"] .profile-role-edit-title {
+  color: rgba(248, 250, 252, 0.98) !important;
+}
+
+/* ROLE EDIT MODAL -- LIGHT MODE */
+html:not(.dark):not([data-theme="dark"]) .profile-role-edit-modal {
+  background: rgba(255, 255, 255, 0.98) !important;
+  border: 1px solid rgba(148, 163, 184, 0.28) !important;
+
+  box-shadow:
+    0 24px 60px rgba(15, 23, 42, 0.16),
+    inset 0 1px 0 rgba(255, 255, 255, 0.92) !important;
+}
+
+/* ROLE EDIT MODAL -- DARK MODE */
+html.dark .profile-role-edit-modal,
+html[data-theme="dark"] .profile-role-edit-modal {
+  background: rgba(15, 23, 42, 0.98) !important;
+  border: 1px solid rgba(51, 65, 85, 0.82) !important;
+
+  box-shadow:
+    0 24px 60px rgba(0, 0, 0, 0.36),
+    inset 0 1px 0 rgba(255, 255, 255, 0.03) !important;
+}
+
+/* ROLE EDIT SELECT -- LIGHT MODE */
+html:not(.dark):not([data-theme="dark"]) .profile-role-edit-select {
+  background: rgba(255, 255, 255, 0.98) !important;
+  border: 1px solid rgba(148, 163, 184, 0.38) !important;
+  color: rgba(15, 23, 42, 0.96) !important;
+}
+
+html:not(.dark):not([data-theme="dark"]) .profile-role-edit-select:focus {
+  border-color: rgba(124, 58, 237, 0.70) !important;
+  box-shadow: 0 0 0 3px rgba(124, 58, 237, 0.10) !important;
+}
+
+/* ROLE EDIT SELECT -- DARK MODE */
+html.dark .profile-role-edit-select,
+html[data-theme="dark"] .profile-role-edit-select {
+  background: rgba(15, 23, 42, 0.78) !important;
+  border: 1px solid rgba(71, 85, 105, 0.82) !important;
+  color: rgba(248, 250, 252, 0.98) !important;
+}
+
+html.dark .profile-role-edit-select:focus,
+html[data-theme="dark"] .profile-role-edit-select:focus {
+  border-color: rgba(139, 92, 246, 0.78) !important;
+  box-shadow: 0 0 0 3px rgba(139, 92, 246, 0.12) !important;
+}
+
+/* ROLE EDIT LABEL -- LIGHT MODE */
+html:not(.dark):not([data-theme="dark"]) .profile-role-edit-label {
+  color: rgba(51, 65, 85, 0.96) !important;
+}
+
+/* ROLE EDIT LABEL -- DARK MODE */
+html.dark .profile-role-edit-label,
+html[data-theme="dark"] .profile-role-edit-label {
+  color: rgba(203, 213, 225, 0.96) !important;
+}
+
+/* ROLE EDIT CLOSE + MEMBER -- LIGHT MODE */
+html:not(.dark):not([data-theme="dark"]) .profile-role-edit-close {
+  color: rgba(100, 116, 139, 0.96) !important;
+}
+
+html:not(.dark):not([data-theme="dark"]) .profile-role-edit-close:hover {
+  background: rgba(241, 245, 249, 0.96) !important;
+  color: rgba(15, 23, 42, 0.96) !important;
+}
+
+html:not(.dark):not([data-theme="dark"]) .profile-role-edit-member {
+  color: rgba(15, 23, 42, 0.96) !important;
+}
+
+/* ROLE EDIT CLOSE + MEMBER -- DARK MODE */
+html.dark .profile-role-edit-close,
+html[data-theme="dark"] .profile-role-edit-close {
+  color: rgba(148, 163, 184, 0.96) !important;
+}
+
+html.dark .profile-role-edit-close:hover,
+html[data-theme="dark"] .profile-role-edit-close:hover {
+  background: rgba(30, 41, 59, 0.96) !important;
+  color: rgba(248, 250, 252, 0.98) !important;
+}
+
+html.dark .profile-role-edit-member,
+html[data-theme="dark"] .profile-role-edit-member {
+  color: rgba(226, 232, 240, 0.98) !important;
+}
+
+/* ROLE EDIT BUTTONS -- LIGHT MODE */
+html:not(.dark):not([data-theme="dark"]) .profile-role-edit-cancel {
+  background: rgba(255, 255, 255, 0.96) !important;
+  border: 1px solid rgba(148, 163, 184, 0.38) !important;
+  color: rgba(51, 65, 85, 0.96) !important;
+}
+
+html:not(.dark):not([data-theme="dark"]) .profile-role-edit-cancel:hover {
+  background: rgba(241, 245, 249, 0.96) !important;
+}
+
+html:not(.dark):not([data-theme="dark"]) .profile-role-edit-save {
+  background: rgb(124, 58, 237) !important;
+  color: #ffffff !important;
+}
+
+html:not(.dark):not([data-theme="dark"]) .profile-role-edit-save:hover {
+  background: rgb(109, 40, 217) !important;
+}
+
+/* ROLE EDIT BUTTONS -- DARK MODE */
+html.dark .profile-role-edit-cancel,
+html[data-theme="dark"] .profile-role-edit-cancel {
+  background: rgba(15, 23, 42, 0.72) !important;
+  border: 1px solid rgba(71, 85, 105, 0.82) !important;
+  color: rgba(203, 213, 225, 0.98) !important;
+}
+
+html.dark .profile-role-edit-cancel:hover,
+html[data-theme="dark"] .profile-role-edit-cancel:hover {
+  background: rgba(30, 41, 59, 0.96) !important;
+}
+
+html.dark .profile-role-edit-save,
+html[data-theme="dark"] .profile-role-edit-save {
+  background: rgb(124, 58, 237) !important;
+  color: #ffffff !important;
+}
+
+html.dark .profile-role-edit-save:hover,
+html[data-theme="dark"] .profile-role-edit-save:hover {
+  background: rgb(139, 92, 246) !important;
+}
+
+/* REMOVE MEMBER MODAL -- LIGHT MODE */
+html:not(.dark):not([data-theme="dark"]) .profile-remove-modal {
+  background: rgba(255, 255, 255, 0.98) !important;
+  border: 1px solid rgba(148, 163, 184, 0.28) !important;
+  box-shadow:
+    0 24px 60px rgba(15, 23, 42, 0.16),
+    inset 0 1px 0 rgba(255, 255, 255, 0.92) !important;
+}
+
+html:not(.dark):not([data-theme="dark"]) .profile-remove-title {
+  color: rgba(15, 23, 42, 0.96) !important;
+}
+
+/* REMOVE MEMBER MODAL -- DARK MODE */
+html.dark .profile-remove-modal,
+html[data-theme="dark"] .profile-remove-modal {
+  background: rgba(15, 23, 42, 0.98) !important;
+  border: 1px solid rgba(51, 65, 85, 0.82) !important;
+  box-shadow:
+    0 24px 60px rgba(0, 0, 0, 0.36),
+    inset 0 1px 0 rgba(255, 255, 255, 0.03) !important;
+}
+
+html.dark .profile-remove-title,
+html[data-theme="dark"] .profile-remove-title {
+  color: rgba(248, 250, 252, 0.98) !important;
+}
+
+/* REMOVE MEMBER CONTENT -- LIGHT MODE */
+html:not(.dark):not([data-theme="dark"]) .profile-remove-subtitle {
+  color: rgba(71, 85, 105, 0.92) !important;
+}
+
+html:not(.dark):not([data-theme="dark"]) .profile-remove-member {
+  color: rgba(15, 23, 42, 0.98) !important;
+}
+
+html:not(.dark):not([data-theme="dark"]) .profile-remove-warning {
+  color: rgb(220, 38, 38) !important;
+}
+
+html:not(.dark):not([data-theme="dark"]) .profile-remove-close {
+  color: rgba(100, 116, 139, 0.96) !important;
+}
+
+html:not(.dark):not([data-theme="dark"]) .profile-remove-close:hover {
+  background: rgba(241, 245, 249, 0.96) !important;
+  color: rgba(15, 23, 42, 0.96) !important;
+}
+
+html:not(.dark):not([data-theme="dark"]) .profile-remove-cancel {
+  background: rgba(255, 255, 255, 0.96) !important;
+  border: 1px solid rgba(148, 163, 184, 0.38) !important;
+  color: rgba(51, 65, 85, 0.96) !important;
+}
+
+html:not(.dark):not([data-theme="dark"]) .profile-remove-cancel:hover {
+  background: rgba(241, 245, 249, 0.96) !important;
+}
+
+html:not(.dark):not([data-theme="dark"]) .profile-remove-confirm {
+  background: rgb(220, 38, 38) !important;
+  color: #ffffff !important;
+}
+
+html:not(.dark):not([data-theme="dark"]) .profile-remove-confirm:hover {
+  background: rgb(185, 28, 28) !important;
+}
+
+
+/* REMOVE MEMBER CONTENT -- DARK MODE */
+html.dark .profile-remove-subtitle,
+html[data-theme="dark"] .profile-remove-subtitle {
+  color: rgba(148, 163, 184, 0.94) !important;
+}
+
+html.dark .profile-remove-member,
+html[data-theme="dark"] .profile-remove-member {
+  color: rgba(248, 250, 252, 0.98) !important;
+}
+
+html.dark .profile-remove-warning,
+html[data-theme="dark"] .profile-remove-warning {
+  color: rgb(248, 113, 113) !important;
+}
+
+html.dark .profile-remove-close,
+html[data-theme="dark"] .profile-remove-close {
+  color: rgba(148, 163, 184, 0.96) !important;
+}
+
+html.dark .profile-remove-close:hover,
+html[data-theme="dark"] .profile-remove-close:hover {
+  background: rgba(30, 41, 59, 0.96) !important;
+  color: rgba(248, 250, 252, 0.98) !important;
+}
+
+html.dark .profile-remove-cancel,
+html[data-theme="dark"] .profile-remove-cancel {
+  background: rgba(15, 23, 42, 0.72) !important;
+  border: 1px solid rgba(71, 85, 105, 0.82) !important;
+  color: rgba(203, 213, 225, 0.98) !important;
+}
+
+html.dark .profile-remove-cancel:hover,
+html[data-theme="dark"] .profile-remove-cancel:hover {
+  background: rgba(30, 41, 59, 0.96) !important;
+}
+
+html.dark .profile-remove-confirm,
+html[data-theme="dark"] .profile-remove-confirm {
+  background: rgb(220, 38, 38) !important;
+  color: #ffffff !important;
+}
+
+html.dark .profile-remove-confirm:hover,
+html[data-theme="dark"] .profile-remove-confirm:hover {
+  background: rgb(239, 68, 68) !important;
+}
+
+/* INVITE SUCCESS TOAST -- LIGHT MODE */
+html:not(.dark):not([data-theme="dark"]) .profile-invite-success-toast {
+  background: rgba(255, 255, 255, 0.98) !important;
+  border: 1px solid rgba(16, 185, 129, 0.28) !important;
+  box-shadow:
+    0 18px 45px rgba(15, 23, 42, 0.14),
+    inset 0 1px 0 rgba(255, 255, 255, 0.92) !important;
+}
+
+html:not(.dark):not([data-theme="dark"]) .profile-invite-success-icon {
+  background: rgba(16, 185, 129, 0.12) !important;
+  color: rgb(5, 150, 105) !important;
+}
+
+html:not(.dark):not([data-theme="dark"]) .profile-invite-success-title {
+  color: rgba(15, 23, 42, 0.96) !important;
+}
+
+html:not(.dark):not([data-theme="dark"]) .profile-invite-success-message {
+  color: rgba(71, 85, 105, 0.90) !important;
+}
+
+
+/* INVITE SUCCESS TOAST -- DARK MODE */
+html.dark .profile-invite-success-toast,
+html[data-theme="dark"] .profile-invite-success-toast {
+  background: rgba(15, 23, 42, 0.98) !important;
+  border: 1px solid rgba(16, 185, 129, 0.24) !important;
+  box-shadow:
+    0 18px 45px rgba(0, 0, 0, 0.34),
+    inset 0 1px 0 rgba(255, 255, 255, 0.03) !important;
+}
+
+html.dark .profile-invite-success-icon,
+html[data-theme="dark"] .profile-invite-success-icon {
+  background: rgba(16, 185, 129, 0.15) !important;
+  color: rgb(52, 211, 153) !important;
+}
+
+html.dark .profile-invite-success-title,
+html[data-theme="dark"] .profile-invite-success-title {
+  color: rgba(248, 250, 252, 0.98) !important;
+}
+
+html.dark .profile-invite-success-message,
+html[data-theme="dark"] .profile-invite-success-message {
+  color: rgba(148, 163, 184, 0.94) !important;
+}
+
+/* INVITE MODAL CONTENT -- LIGHT MODE */
+html:not(.dark):not([data-theme="dark"]) .profile-invite-modal-subtitle {
+  color: rgba(71, 85, 105, 0.90) !important;
+}
+
+html:not(.dark):not([data-theme="dark"]) .profile-invite-close {
+  color: rgba(100, 116, 139, 0.96) !important;
+}
+
+html:not(.dark):not([data-theme="dark"]) .profile-invite-close:hover {
+  background: rgba(241, 245, 249, 0.96) !important;
+  color: rgba(15, 23, 42, 0.96) !important;
+}
+
+html:not(.dark):not([data-theme="dark"]) .profile-invite-label {
+  color: rgba(51, 65, 85, 0.96) !important;
+}
+
+html:not(.dark):not([data-theme="dark"]) .profile-invite-input {
+  background: rgba(255, 255, 255, 0.98) !important;
+  border: 1px solid rgba(148, 163, 184, 0.38) !important;
+  color: rgba(15, 23, 42, 0.96) !important;
+}
+
+html:not(.dark):not([data-theme="dark"]) .profile-invite-input::placeholder {
+  color: rgba(100, 116, 139, 0.72) !important;
+}
+
+html:not(.dark):not([data-theme="dark"]) .profile-invite-input:focus {
+  border-color: rgba(124, 58, 237, 0.72) !important;
+  box-shadow: 0 0 0 3px rgba(124, 58, 237, 0.10) !important;
+}
+
+
+/* INVITE MODAL CONTENT -- DARK MODE */
+html.dark .profile-invite-modal-subtitle,
+html[data-theme="dark"] .profile-invite-modal-subtitle {
+  color: rgba(148, 163, 184, 0.94) !important;
+}
+
+html.dark .profile-invite-close,
+html[data-theme="dark"] .profile-invite-close {
+  color: rgba(148, 163, 184, 0.96) !important;
+}
+
+html.dark .profile-invite-close:hover,
+html[data-theme="dark"] .profile-invite-close:hover {
+  background: rgba(30, 41, 59, 0.96) !important;
+  color: rgba(248, 250, 252, 0.98) !important;
+}
+
+html.dark .profile-invite-label,
+html[data-theme="dark"] .profile-invite-label {
+  color: rgba(203, 213, 225, 0.96) !important;
+}
+
+html.dark .profile-invite-input,
+html[data-theme="dark"] .profile-invite-input {
+  background: rgba(15, 23, 42, 0.78) !important;
+  border: 1px solid rgba(71, 85, 105, 0.82) !important;
+  color: rgba(248, 250, 252, 0.98) !important;
+}
+
+html.dark .profile-invite-input::placeholder,
+html[data-theme="dark"] .profile-invite-input::placeholder {
+  color: rgba(100, 116, 139, 0.88) !important;
+}
+
+html.dark .profile-invite-input:focus,
+html[data-theme="dark"] .profile-invite-input:focus {
+  border-color: rgba(139, 92, 246, 0.78) !important;
+  box-shadow: 0 0 0 3px rgba(139, 92, 246, 0.12) !important;
+}
+
+/* INVITE ROLE SELECT */
+html:not(.dark):not([data-theme="dark"]) .profile-invite-select {
+  background: #ffffff !important;
+  border: 1px solid #cbd5e1 !important;
+  color: #1e293b !important;
+}
+
+html:not(.dark):not([data-theme="dark"]) .profile-invite-select:focus {
+  border-color: #8b5cf6 !important;
+  box-shadow: 0 0 0 3px rgba(139, 92, 246, 0.10) !important;
+}
+
+html.dark .profile-invite-select,
+html[data-theme="dark"] .profile-invite-select {
+  background: #0f172a !important;
+  border: 1px solid #475569 !important;
+  color: #f1f5f9 !important;
+}
+
+html.dark .profile-invite-select:focus,
+html[data-theme="dark"] .profile-invite-select:focus {
+  border-color: #8b5cf6 !important;
+  box-shadow: 0 0 0 3px rgba(139, 92, 246, 0.14) !important;
+}
+
+
 
 /* Email / Phone / Job / Bio cards */
 html.dark .profile-info-panel .grid > div,

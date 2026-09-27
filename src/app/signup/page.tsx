@@ -2,12 +2,15 @@
 
 import { useState } from "react";
 import Link from "next/link";
-import { useRouter } from "next/navigation";
+import { useRouter, useSearchParams } from "next/navigation";
 import { useAuth } from "@/lib/auth";
 
 export default function SignupPage() {
-  const { signup } = useAuth();
+  const { signup, completeInvite } = useAuth();
   const router = useRouter();
+
+  const searchParams = useSearchParams();
+  const isInvite = searchParams.get("invite") === "1";
 
   const [name, setName] = useState("");
   const [email, setEmail] = useState("");
@@ -40,6 +43,20 @@ export default function SignupPage() {
     }
 
     setLoading(true);
+
+    if (isInvite) {
+      const res = await completeInvite(name, password);
+
+      setLoading(false);
+
+      if (!res.ok) {
+        setError(res.error ?? "Unable to complete invitation.");
+        return;
+      }
+
+      router.replace("/dashboard");
+      return;
+    }
 
     const res = await signup(name, email, password);
 

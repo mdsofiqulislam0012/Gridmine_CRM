@@ -34,6 +34,11 @@ interface AuthCtx {
     password: string
   ) => Promise<{ ok: boolean; error?: string; needsConfirmation?: boolean }>;
 
+  completeInvite: (
+  name: string,
+  password: string
+) => Promise<{ ok: boolean; error?: string }>;
+
   logout: () => Promise<void>;
   refreshUser: () => Promise<void>;
 }
@@ -177,6 +182,52 @@ export function AuthProvider({
     };
   };
 
+  const completeInvite: AuthCtx["completeInvite"] = async (
+  name,
+  password
+) => {
+  const {
+    data: { session },
+    error: sessionError,
+  } = await supabase.auth.getSession();
+
+  if (sessionError) {
+    return {
+      ok: false,
+      error: sessionError.message,
+    };
+  }
+
+  if (!session) {
+    return {
+      ok: false,
+      error: "Invitation session not found. Please open the invitation link again.",
+    };
+  }
+
+  const { data, error } = await supabase.auth.updateUser({
+    password,
+    data: {
+      full_name: name.trim(),
+    },
+  });
+
+  if (error) {
+    return {
+      ok: false,
+      error: error.message,
+    };
+  }
+
+  if (data.user) {
+    setUser(await getAppUser(supabase, data.user));
+  }
+
+  return {
+    ok: true,
+  };
+};
+
   const refreshUser = async () => {
   const {
     data: { user: authUser },
@@ -203,9 +254,10 @@ export function AuthProvider({
   loading,
   login,
   signup,
+  completeInvite,
   logout,
   refreshUser,
-  }}
+}}
     >
       {children}
     </Ctx.Provider>

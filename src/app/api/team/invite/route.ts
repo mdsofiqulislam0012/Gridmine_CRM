@@ -153,11 +153,12 @@ if (existingMember) {
 
   const { data: inviteData, error: inviteError } =
   await supabaseAdmin.auth.admin.inviteUserByEmail(email, {
-  data: {
-    full_name: fullName,
-    role,
-  },
-});
+    redirectTo: `${new URL(request.url).origin}/signup?invite=1`,
+    data: {
+      full_name: fullName,
+      role,
+    },
+  });
 
 if (inviteError) {
   return NextResponse.json(

@@ -9,7 +9,22 @@ import {
   Phone,
   Briefcase,
   Save,
+  Users,
+  Activity,
+  Shield,
+  Bell,
+  Crown,
+  Plus,
+  Search,
+  ChevronRight,
+  Home,
+  Ellipsis,
+  ChevronLeft,
   UserRound,
+  UserCog,
+  Trash2,
+  X,
+  CheckCircle2,
 } from "lucide-react";
 import { createClient } from "@/lib/supabase/client";
 
@@ -689,7 +704,7 @@ const handleRemoveMember = async () => {
 };  
 
 const teamOverviewCard = (
-  <div className="profile-team-overview h-[255px] overflow-hidden rounded-2xl border border-slate-700/70 bg-slate-900/60 p-4">
+  <div className="profile-team-overview h-[255px] overflow-hidden rounded-2xl border p-4">
     {/* Header */}
     <div className="flex items-start justify-between">
       <div>
@@ -703,7 +718,7 @@ const teamOverviewCard = (
       </div>
 
       <div className="profile-team-overview-icon flex h-11 w-11 items-center justify-center rounded-xl text-lg">
-        ♙
+        <Users size={19} />
       </div>
     </div>
 
@@ -713,15 +728,18 @@ const teamOverviewCard = (
         {teamMembers.length}
       </p>
 
-      <div className="flex items-center gap-2 text-xs text-slate-400">
-      <span className="profile-team-active-now text-xs" />
-      <span>{activeMemberCount} Online </span>
-      </div>
+      <div className="flex items-center gap-2 text-xs">
+      <span className="h-2 w-2 rounded-full bg-emerald-500" />
+      <span className="profile-team-active-now">
+        {activeMemberCount} Online
+      </span>
+    </div>
       </div>
 
     {/* Role Cards */}
     <div className="mt-2 grid grid-cols-3 gap-3">
       <div className="profile-role-admin rounded-xl p-4 text-center">
+        <Crown size={17} className="mx-auto mb-1" />
         <p className="profile-role-count text-xl font-bold">
           {adminCount}
         </p>
@@ -731,6 +749,7 @@ const teamOverviewCard = (
       </div>
 
       <div className="profile-role-subadmin rounded-xl p-4 text-center">
+        <Users size={17} className="mx-auto mb-1" />
         <p className="profile-role-count text-xl font-bold">
           {subAdminCount}
         </p>
@@ -740,6 +759,7 @@ const teamOverviewCard = (
       </div>
 
       <div className="profile-role-employee rounded-xl p-4 text-center">
+        <UserRound size={17} className="mx-auto mb-1" />
         <p className="profile-role-count text-xl font-bold">
           {employeeCount}
         </p>
@@ -784,12 +804,18 @@ const teamOverviewCard = (
         </div>
 
         <div className="profile-breadcrumb flex items-center gap-2 text-xs">
+        <span className="inline-flex items-center gap-1">
+        <Home size={13} />
         <span>Home</span>
-        <span>›</span>
-        <span className="profile-breadcrumb-current font-medium">Profile</span>
+      </span>
+        <ChevronRight size={13} />
+
+        <span className="profile-breadcrumb-current font-medium">
+          Profile
+        </span>
       </div>
       </div>
-        <div className="team-overview-section self-start lg:col-start-2 lg:row-start-2">
+        <div className="team-overview-section order-2 w-full self-start lg:order-none lg:col-start-2 lg:row-start-2">
           {teamOverviewCard}
         </div>
 
@@ -810,14 +836,14 @@ const teamOverviewCard = (
         <button
           type="button"
           onClick={() => setIsInviteOpen(false)}
-          className="flex h-8 w-8 items-center justify-center rounded-lg text-xl text-slate-400 transition hover:bg-slate-800 hover:text-white"
+          className="flex h-8 w-8 items-center justify-center rounded-lg text-xl text-slate-500 transition hover:bg-slate-100 hover:text-slate-900 dark:text-slate-400 dark:hover:bg-slate-800 dark:hover:text-white"
         >
-          ×
+          <X size={16} />
         </button>
       </div>
       <div className="mt-6 space-y-4">
       <div>
-  <label className="mb-2 block text-sm font-medium text-slate-300">
+  <label className="profile-invite-label mb-2 block text-sm font-medium">
     Full Name
   </label>
 
@@ -826,11 +852,11 @@ const teamOverviewCard = (
     value={inviteFullName}
     onChange={(e) => setInviteFullName(e.target.value)}
     placeholder="Enter member name"
-    className="h-11 w-full rounded-lg border border-slate-700 bg-slate-900 px-3 text-sm text-white outline-none placeholder:text-slate-500 focus:border-violet-500"
+    className="profile-invite-input h-11 w-full rounded-lg px-3 text-sm outline-none"
   />
 </div>
   <div>
-    <label className="mb-2 block text-sm font-medium text-slate-300">
+    <label className="profile-invite-label mb-2 block text-sm font-medium">
       Email Address
     </label>
 
@@ -839,19 +865,19 @@ const teamOverviewCard = (
       value={inviteEmail}
       onChange={(e) => setInviteEmail(e.target.value)}
       placeholder="member@example.com"
-      className="h-11 w-full rounded-lg border border-slate-700 bg-slate-900 px-3 text-sm text-white outline-none placeholder:text-slate-500 focus:border-violet-500"
+      className="profile-invite-input h-11 w-full rounded-lg px-3 text-sm outline-none"
     />
   </div>
 
   <div>
-    <label className="mb-2 block text-sm font-medium text-slate-300">
+    <label className="profile-invite-label mb-2 block text-sm font-medium">
       Role
     </label>
 
     <select
       value={inviteRole}
       onChange={(e) => setInviteRole(e.target.value)}
-      className="h-11 w-full rounded-lg border border-slate-700 bg-slate-900 px-3 text-sm text-slate-300 outline-none focus:border-violet-500"
+      className="profile-invite-select h-11 w-full rounded-lg px-3 text-sm outline-none transition"
     >
       <option value="user">Employee</option>
       {currentMember?.role === "admin" && (
@@ -864,7 +890,7 @@ const teamOverviewCard = (
   </div>
 
   {inviteError && (
-    <p className="text-sm text-red-400">
+    <p className="profile-invite-error text-sm">
       {inviteError}
     </p>
   )}
@@ -882,7 +908,7 @@ const teamOverviewCard = (
     type="button"
     onClick={handleInviteMember}
     disabled={inviteLoading}
-    className="h-10 rounded-lg bg-violet-600 px-4 text-sm font-medium text-white transition hover:bg-violet-500 disabled:cursor-not-allowed disabled:opacity-50"
+    className="h-10 rounded-lg bg-violet-600 px-5 text-sm font-semibold text-white shadow-sm transition hover:bg-violet-500 disabled:cursor-not-allowed disabled:opacity-50"
   >
     {inviteLoading ? "Sending..." : "Send Invite"}
   </button>
@@ -894,16 +920,16 @@ const teamOverviewCard = (
 
 {roleEditMember && (
   <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 p-4 backdrop-blur-sm">
-    <div className="w-full max-w-md rounded-2xl border border-slate-800 bg-slate-950 p-6 shadow-2xl">
+    <div className="profile-role-edit-modal w-full max-w-md rounded-2xl p-6 shadow-2xl">
       <div className="flex items-start justify-between">
         <div>
-          <h2 className="text-lg font-semibold text-white">
+          <h2 className="profile-role-edit-title text-lg font-semibold">
             Change Member Role
           </h2>
 
-          <p className="mt-1 text-sm text-slate-400">
+          <p className="profile-role-edit-subtitle mt-1 text-sm">
             Update the role for{" "}
-            <span className="font-medium text-slate-200">
+            <span className="profile-role-edit-member font-medium">
               {roleEditMember.full_name || roleEditMember.email}
             </span>
           </p>
@@ -912,14 +938,14 @@ const teamOverviewCard = (
         <button
           type="button"
           onClick={() => setRoleEditMember(null)}
-          className="flex h-8 w-8 items-center justify-center rounded-lg text-xl text-slate-400 transition hover:bg-slate-800 hover:text-white"
+          className="profile-role-edit-close flex h-8 w-8 items-center justify-center rounded-lg text-xl transition"
         >
-          ×
+          <X size={16} />
         </button>
       </div>
 
       <div className="mt-6">
-        <label className="mb-2 block text-sm font-medium text-slate-300">
+        <label className="profile-role-edit-label mb-2 block text-sm font-medium">
           Role
         </label>
 
@@ -930,7 +956,7 @@ const teamOverviewCard = (
             e.target.value as "admin" | "sub_admin" | "user"
           )
         }
-          className="h-11 w-full rounded-lg border border-slate-700 bg-slate-900 px-3 text-sm text-slate-300 outline-none focus:border-violet-500"
+          className="profile-role-edit-select mt-2 h-10 w-full rounded-lg px-3 text-sm outline-none"
         >
           <option value="user">Employee</option>
           {currentMember?.role === "admin" && (
@@ -951,7 +977,7 @@ const teamOverviewCard = (
         <button
           type="button"
           onClick={() => setRoleEditMember(null)}
-          className="h-10 rounded-lg border border-slate-700 px-4 text-sm font-medium text-slate-300 transition hover:bg-slate-800"
+          className="profile-role-edit-cancel h-10 rounded-lg px-4 text-sm font-medium transition"
         >
           Cancel
         </button>
@@ -960,7 +986,7 @@ const teamOverviewCard = (
         type="button"
         onClick={handleRoleUpdate}
         disabled={roleEditLoading}
-        className="h-10 rounded-lg bg-violet-600 px-4 text-sm font-medium text-white transition hover:bg-violet-500 disabled:cursor-not-allowed disabled:opacity-50"
+        className="profile-role-edit-save h-10 rounded-lg px-4 text-sm font-medium transition disabled:cursor-not-allowed disabled:opacity-50"
       >
         {roleEditLoading ? "Saving..." : "Save Role"}
       </button>
@@ -971,22 +997,22 @@ const teamOverviewCard = (
 
 {removeMember && (
   <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 p-4 backdrop-blur-sm">
-    <div className="w-full max-w-md rounded-2xl border border-slate-800 bg-slate-950 p-6 shadow-2xl">
+    <div className="profile-remove-modal w-full max-w-md rounded-2xl p-6 shadow-2xl">
       <div className="flex items-start justify-between">
         <div>
-          <h2 className="text-lg font-semibold text-white">
+          <h2 className="profile-remove-title text-lg font-semibold">
             Remove Team Member
           </h2>
 
-          <p className="mt-2 text-sm text-slate-400">
+          <p className="profile-remove-subtitle mt-2 text-sm">
             Are you sure you want to remove{" "}
-            <span className="font-medium text-white">
+           <span className="profile-remove-member font-medium">
               {removeMember.full_name || removeMember.email}
             </span>
             ?
           </p>
 
-          <p className="mt-2 text-sm text-red-400">
+          <p className="profile-remove-warning mt-2 text-sm">
             Their CRM access and login account will be removed. They will need
             a new invitation to access the CRM again.
           </p>
@@ -998,9 +1024,9 @@ const teamOverviewCard = (
             setRemoveMember(null);
             setRemoveError("");
           }}
-          className="flex h-8 w-8 items-center justify-center rounded-lg text-xl text-slate-400 transition hover:bg-slate-800 hover:text-white"
+          className="profile-remove-close flex h-8 w-8 items-center justify-center rounded-lg text-xl transition"
         >
-          ×
+          <X size={16} />
         </button>
       </div>
 
@@ -1017,7 +1043,7 @@ const teamOverviewCard = (
             setRemoveMember(null);
             setRemoveError("");
           }}
-          className="h-10 rounded-lg border border-slate-700 px-4 text-sm font-medium text-slate-300 transition hover:bg-slate-800"
+          className="profile-remove-cancel h-10 rounded-lg px-4 text-sm font-medium transition"
         >
           Cancel
         </button>
@@ -1026,7 +1052,7 @@ const teamOverviewCard = (
           type="button"
           onClick={handleRemoveMember}
           disabled={removeLoading}
-          className="h-10 rounded-lg bg-red-600 px-4 text-sm font-medium text-white transition hover:bg-red-500 disabled:cursor-not-allowed disabled:opacity-50"
+          className="profile-remove-confirm h-10 rounded-lg px-4 text-sm font-medium transition disabled:cursor-not-allowed disabled:opacity-50"
         >
           {removeLoading ? "Removing..." : "Remove Member"}
         </button>
@@ -1035,18 +1061,18 @@ const teamOverviewCard = (
   </div>
 )}
   {inviteSuccess && (
-    <div className="fixed bottom-6 right-6 z-[60] w-[320px] rounded-xl border border-emerald-500/20 bg-slate-950 px-4 py-3 shadow-2xl">
+    <div className="profile-invite-success-toast fixed bottom-6 right-6 z-[60] w-[320px] rounded-xl px-4 py-3 shadow-2xl">
       <div className="flex items-start gap-3">
-        <div className="mt-0.5 flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-emerald-500/15 text-emerald-400">
-          ✓
+        <div className="profile-invite-success-icon mt-0.5 flex h-8 w-8 shrink-0 items-center justify-center rounded-full">
+          <CheckCircle2 size={16} />
         </div>
 
         <div>
-          <p className="text-sm font-semibold text-white">
+          <p className="profile-invite-success-title text-sm font-semibold">
             Invitation sent
           </p>
 
-          <p className="mt-1 text-xs text-slate-400">
+          <p className="profile-invite-success-message mt-1 text-xs">
             {inviteSuccess}
           </p>
         </div>
@@ -1055,57 +1081,61 @@ const teamOverviewCard = (
   )}
 
     {/* 3D PROFILE CARD */}
-      <div className="profile-tabs order-3 -mt-2 flex items-center gap-1 lg:col-span-2 lg:row-start-3">
+      <div className="profile-tabs order-3 profile-tabs order-3 -mt-2 flex w-full items-center gap-1 overflow-x-auto whitespace-nowrap scrollbar-none lg:col-span-2 lg:row-start-3">
         <button
         type="button"
         onClick={() => setActiveProfileTab("team")}
-        className={`profile-tab-button flex h-12 items-center gap-2 border-b-2 px-4 text-sm font-medium transition ${
+        className={`profile-tab-button flex h-12 shrink-0 shrink-0 items-center gap-2 border-b-2 px-4 text-sm font-medium transition ${
         activeProfileTab === "team"
           ? "profile-tab-active"
           : "profile-tab-idle"
       }`}
       >
-        Team Members
+        <Users size={16} />
+        <span>Team Members</span>
       </button>
 
         <button
         type="button"
         onClick={() => setActiveProfileTab("activity")}
-        className={`profile-tab-button border-b-2 px-1 py-3 text-sm font-medium transition ${
+        className={`profile-tab-button flex h-12 shrink-0 shrink-0 shrink-0 items-center gap-2 border-b-2 px-4 text-sm font-medium transition ${
         activeProfileTab === "activity"
           ? "profile-tab-active"
           : "profile-tab-idle"
       }`}
       >
-        My Activity
+        <Activity size={16} />
+        <span>My Activity</span>
       </button>
 
         <button
           type="button"
           onClick={() => setActiveProfileTab("security")}
-          className={`profile-tab-button border-b-2 px-1 py-3 text-sm font-medium transition ${
+         className={`profile-tab-button flex h-12 shrink-0 shrink-0 items-center gap-2 border-b-2 px-4 text-sm font-medium transition ${
           activeProfileTab === "security"
             ? "profile-tab-active"
             : "profile-tab-idle"
         }`}
         >
-          Security
+          <Shield size={16} />
+          <span>Security</span>
         </button>
 
         <button
         type="button"
         onClick={() => setActiveProfileTab("notifications")}
-        className={`profile-tab-button border-b-2 px-1 py-3 text-sm font-medium transition ${
+        className={`profile-tab-button flex h-12 shrink-0 shrink-0 items-center gap-2 border-b-2 px-4 text-sm font-medium transition ${
         activeProfileTab === "notifications"
           ? "profile-tab-active"
           : "profile-tab-idle"
       }`}
       >
-        Notifications
+       <Bell size={16} />
+        <span>Notifications</span>
       </button>
       </div>
       {activeProfileTab === "team" && (
-      <div className="profile-team-list-card order-4 -mt-4 rounded-2xl border border-slate-800 bg-slate-900/40 p-5 lg:col-span-2 lg:row-start-4">
+     <div className="profile-team-list-card order-4 mt-0 rounded-2xl border p-4 sm:p-5 lg:-mt-4 lg:col-span-2 lg:row-start-4">
       <div className="flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
         <div>
           <h2 className="profile-team-list-title text-lg font-semibold">
@@ -1118,13 +1148,20 @@ const teamOverviewCard = (
         </div>
 
         <div className="flex flex-col gap-2 sm:flex-row sm:items-center">
+          <div className="relative w-full sm:w-64">
+          <Search
+            size={15}
+            className="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 text-slate-400"
+          />
+
           <input
             type="text"
             placeholder="Search team members..."
             value={memberSearch}
             onChange={(e) => setMemberSearch(e.target.value)}
-            className="profile-team-search h-10 w-full rounded-lg px-3 text-sm outline-none sm:w-64"
+            className="profile-team-search h-10 w-full rounded-lg pl-9 pr-3 text-sm outline-none"
           />
+        </div>
 
           <select
             value={roleFilter}
@@ -1149,7 +1186,8 @@ const teamOverviewCard = (
           }}
           className="profile-invite-button inline-flex h-10 items-center justify-center gap-2 rounded-[12px] px-4 text-[13px] font-semibold transition-all duration-200"
           >
-            + Invite Member
+            <Plus size={16} />
+            <span>Invite Member</span>
           </button>
         )}
         </div>
@@ -1187,7 +1225,7 @@ const teamOverviewCard = (
             className="h-9 w-9 rounded-full object-cover"
           />
         ) : (
-          <div className="flex h-9 w-9 items-center justify-center rounded-full bg-slate-700 text-xs font-semibold text-white">
+          <div className="flex h-9 w-9 items-center justify-center rounded-full bg-slate-200 text-xs font-semibold text-slate-700 dark:bg-slate-700 dark:text-white">
             {(member.full_name || member.email || "M")
               .charAt(0)
               .toUpperCase()}
@@ -1210,7 +1248,7 @@ const teamOverviewCard = (
       </div>
 
       <span
-        className={`profile-team-role-badge w-fit rounded-md px-2 py-1 text-xs font-medium ${
+        className={`profile-team-role-badge inline-flex w-fit items-center gap-1.5 rounded-md px-2 py-1 text-xs font-medium ${
           member.role === "admin"
             ? "profile-team-role-admin-badge"
             : member.role === "sub_admin"
@@ -1218,7 +1256,15 @@ const teamOverviewCard = (
               : "profile-team-role-employee-badge"
         }`}
       >
-        {getRoleLabel(member.role)}
+        {member.role === "admin" ? (
+          <Crown size={12} />
+        ) : member.role === "sub_admin" ? (
+          <Users size={12} />
+        ) : (
+          <UserRound size={12} />
+        )}
+
+        <span>{getRoleLabel(member.role)}</span>
       </span>
 
       <span className="profile-team-member-email truncate">
@@ -1251,7 +1297,7 @@ const teamOverviewCard = (
 
       <div className="relative flex justify-center" data-member-menu>
         {isCurrentUser || !canManageTeam ? (
-          <span className="text-slate-500">—</span>
+          <span className="text-slate-400 dark:text-slate-500">—</span>
         ) : (
           <button
             type="button"
@@ -1262,7 +1308,7 @@ const teamOverviewCard = (
             }
             className="profile-team-action-button flex h-8 w-8 items-center justify-center rounded-md transition-all"
           >
-            •••
+            <Ellipsis size={17} />
           </button>
           
         )}
@@ -1276,9 +1322,10 @@ const teamOverviewCard = (
               setRoleEditValue(member.role || "user");
               setOpenMemberMenuId(null);
             }}
-            className="profile-team-action-change-role block w-full px-3 py-2 text-left text-sm transition-all"
+            className="profile-team-action-change-role flex w-full items-center gap-2 px-3 py-2 text-left text-sm transition-all"
           >
-            Change Role
+            <UserCog size={15} />
+            <span>Change Role</span>
           </button>
 
           {currentMember?.role === "admin" && (
@@ -1289,9 +1336,10 @@ const teamOverviewCard = (
               setRemoveMember(member);
               setOpenMemberMenuId(null);
             }}
-            className="profile-team-action-remove block w-full px-3 py-2 text-left text-sm transition-all"
+            className="profile-team-action-remove flex w-full items-center gap-2 px-3 py-2 text-left text-sm transition-all"
           >
-            Remove Member
+            <Trash2 size={15} />
+            <span>Remove Member</span>
           </button>
         )}
         </div>
@@ -1303,7 +1351,7 @@ const teamOverviewCard = (
 })}
 
 {paginatedTeamMembers.length === 0 && (
-  <div className="border-t border-slate-800 px-4 py-10 text-center">
+  <div className="border-t border-slate-200 px-4 py-10 text-center dark:border-slate-800">
     <p className="profile-team-empty-title text-sm font-medium">
       No team members found
     </p>
@@ -1326,11 +1374,12 @@ const teamOverviewCard = (
       disabled={currentPage === 1}
       className="profile-team-pagination-nav flex h-8 w-8 items-center justify-center rounded-md disabled:cursor-not-allowed disabled:opacity-40"
     >
-      ‹
+      <ChevronLeft size={15} />
     </button>
 
     {Array.from({ length: totalPages }, (_, index) => {
       const pageNumber = index + 1;
+      <ChevronRight size={15} />
 
       return (
         <button
@@ -1364,12 +1413,188 @@ const teamOverviewCard = (
   </div>
     </div>
     )}
-      <div className="profile-card-enter relative w-full [perspective:1400px] lg:col-start-1 lg:row-start-2">
+
+    {activeProfileTab === "activity" && (
+  <div className="order-4 mt-0 lg:-mt-4 min-h-[250px] rounded-2xl border border-slate-200 bg-white p-5 text-slate-900 dark:border-slate-800 dark:bg-slate-900/50 dark:text-slate-100 lg:col-span-2 lg:row-start-4">
+    <div className="flex items-center gap-3">
+      <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-violet-50 text-violet-600 dark:bg-violet-500/10 dark:text-violet-300">
+        <Activity size={18} />
+      </div>
+
+      <div>
+        <h3 className="text-lg font-semibold text-slate-900 dark:text-slate-100">
+          My Activity
+        </h3>
+
+        <p className="mt-0.5 text-sm text-slate-500 dark:text-slate-400">
+          Your recent account and profile activity
+        </p>
+      </div>
+    </div>
+
+    <div className="mt-5 flex min-h-[160px] flex-col items-center justify-center rounded-xl border border-dashed border-slate-200 bg-slate-50/80 px-6 text-center dark:border-slate-700 dark:bg-slate-950/30">
+      <div className="flex h-11 w-11 items-center justify-center rounded-full bg-slate-100 text-slate-500 dark:bg-slate-800 dark:text-slate-400">
+        <Activity size={20} />
+      </div>
+
+      <p className="mt-3 text-sm font-semibold text-slate-700 dark:text-slate-200">
+        No recent activity yet
+      </p>
+
+      <p className="mt-1 text-xs text-slate-500 dark:text-slate-400">
+        Your recent actions will appear here.
+      </p>
+    </div>
+  </div>
+)}
+
+{activeProfileTab === "security" && (
+  <div className="order-4 mt-0 min-h-[250px] lg:-mt-4 rounded-2xl border border-slate-200 bg-white p-5 text-slate-900 dark:border-slate-800 dark:bg-slate-900/50 dark:text-slate-100 lg:col-span-2 lg:row-start-4">
+    
+    <div className="flex items-center gap-3">
+      <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-violet-50 text-violet-600 dark:bg-violet-500/10 dark:text-violet-300">
+        <Shield size={18} />
+      </div>
+
+      <div>
+        <h3 className="text-lg font-semibold text-slate-900 dark:text-slate-100">
+          Security
+        </h3>
+
+        <p className="mt-0.5 text-sm text-slate-500 dark:text-slate-400">
+          Manage your account security and access
+        </p>
+      </div>
+    </div>
+
+    <div className="mt-5 grid gap-3 md:grid-cols-3">
+      
+      <div className="rounded-xl border border-slate-200 bg-slate-50/80 p-4 dark:border-slate-700 dark:bg-slate-950/30">
+        <div className="flex items-center gap-2">
+          <Shield
+            size={16}
+            className="text-emerald-600 dark:text-emerald-400"
+          />
+
+          <span className="text-sm font-semibold text-slate-800 dark:text-slate-200">
+            Account Protection
+          </span>
+        </div>
+
+        <p className="mt-2 text-xs leading-5 text-slate-500 dark:text-slate-400">
+          Your account is currently protected and active.
+        </p>
+      </div>
+
+      <div className="rounded-xl border border-slate-200 bg-slate-50/80 p-4 dark:border-slate-700 dark:bg-slate-950/30">
+        <div className="flex items-center gap-2">
+          <Shield
+            size={16}
+            className="text-blue-600 dark:text-blue-400"
+          />
+
+          <span className="text-sm font-semibold text-slate-800 dark:text-slate-200">
+            Password
+          </span>
+        </div>
+
+        <p className="mt-2 text-xs leading-5 text-slate-500 dark:text-slate-400">
+          Keep your password secure and never share it.
+        </p>
+      </div>
+
+      <div className="rounded-xl border border-slate-200 bg-slate-50/80 p-4 dark:border-slate-700 dark:bg-slate-950/30">
+        <div className="flex items-center gap-2">
+          <Shield
+            size={16}
+            className="text-violet-600 dark:text-violet-400"
+          />
+
+          <span className="text-sm font-semibold text-slate-800 dark:text-slate-200">
+            Login Sessions
+          </span>
+        </div>
+
+        <p className="mt-2 text-xs leading-5 text-slate-500 dark:text-slate-400">
+          Review and manage access to your CRM account.
+        </p>
+      </div>
+
+    </div>
+  </div>
+)}
+
+{activeProfileTab === "notifications" && (
+  <div className="order-4 mt-0 lg:-mt-4 min-h-[250px] rounded-2xl border border-slate-200 bg-white p-5 text-slate-900 dark:border-slate-800 dark:bg-slate-900/50 dark:text-slate-100 lg:col-span-2 lg:row-start-4">
+    <div className="flex items-center gap-3">
+      <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-violet-50 text-violet-600 dark:bg-violet-500/10 dark:text-violet-300">
+        <Bell size={18} />
+      </div>
+
+      <div>
+        <h3 className="text-lg font-semibold text-slate-900 dark:text-slate-100">
+          Notifications
+        </h3>
+
+        <p className="mt-0.5 text-sm text-slate-500 dark:text-slate-400">
+          Manage how you receive CRM updates
+        </p>
+      </div>
+    </div>
+
+    <div className="mt-5 grid gap-3 md:grid-cols-3">
+      <div className="rounded-xl border border-slate-200 bg-slate-50/80 p-4 dark:border-slate-700 dark:bg-slate-950/30">
+        <div className="flex items-center gap-2">
+          <Bell size={16} className="text-blue-600 dark:text-blue-400" />
+
+          <span className="text-sm font-semibold text-slate-800 dark:text-slate-200">
+            Team Updates
+          </span>
+        </div>
+
+        <p className="mt-2 text-xs leading-5 text-slate-500 dark:text-slate-400">
+          Receive updates when team members or roles change.
+        </p>
+      </div>
+
+      <div className="rounded-xl border border-slate-200 bg-slate-50/80 p-4 dark:border-slate-700 dark:bg-slate-950/30">
+        <div className="flex items-center gap-2">
+          <Bell size={16} className="text-emerald-600 dark:text-emerald-400" />
+
+          <span className="text-sm font-semibold text-slate-800 dark:text-slate-200">
+            Account Alerts
+          </span>
+        </div>
+
+        <p className="mt-2 text-xs leading-5 text-slate-500 dark:text-slate-400">
+          Get important notifications about your CRM account.
+        </p>
+      </div>
+
+      <div className="rounded-xl border border-slate-200 bg-slate-50/80 p-4 dark:border-slate-700 dark:bg-slate-950/30">
+        <div className="flex items-center gap-2">
+          <Bell size={16} className="text-violet-600 dark:text-violet-400" />
+
+          <span className="text-sm font-semibold text-slate-800 dark:text-slate-200">
+            Security Alerts
+          </span>
+        </div>
+
+        <p className="mt-2 text-xs leading-5 text-slate-500 dark:text-slate-400">
+          Stay informed about important login and security activity.
+        </p>
+      </div>
+    </div>
+  </div>
+)}
+
+
+      <div className="profile-card-enter order-1 relative w-full [perspective:1400px] lg:order-none lg:col-start-1 lg:row-start-2">
 
         {/* Card Depth */}
-        <div className="absolute inset-x-8 -bottom-5 h-16 rounded-[40px] bg-[rgba(119,89,210,0.16)] blur-2xl" />
+        <div className="profile-card-depth absolute inset-x-8 -bottom-5 h-16 rounded-[40px] bg-[rgba(119,89,210,0.16)] blur-2xl" />
 
-        <div className="absolute inset-0 translate-x-[7px] translate-y-[10px] rounded-[34px] bg-[rgba(177,157,244,0.20)]" />
+        <div className="profile-card-depth absolute inset-0 translate-x-[7px] translate-y-[10px] rounded-[34px] bg-[rgba(177,157,244,0.20)]" />
 
         {/* Main Card */}
         <div
@@ -1382,18 +1607,19 @@ const teamOverviewCard = (
 
           {/* Soft internal RGBA light */}
           <div className="
+            profile-card-ambient
             pointer-events-none absolute -left-16 -top-20 h-72 w-72 rounded-full
             bg-[rgba(59,130,246,0.05)] blur-[80px]
             dark:bg-[rgba(59,130,246,0.07)]
           " />
 
-          <div className="
+          <div className=" profile-card-ambient
             pointer-events-none absolute -right-20 top-10 h-72 w-72 rounded-full
             bg-[rgba(139,92,246,0.05)] blur-[90px]
             dark:bg-[rgba(139,92,246,0.08)]
           " />
 
-          <div className="
+          <div className=" profile-card-ambient
             pointer-events-none absolute bottom-0 left-1/3 h-56 w-72 rounded-full
             bg-[rgba(6,182,212,0.035)] blur-[90px]
             dark:bg-[rgba(6,182,212,0.06)]
@@ -1444,9 +1670,9 @@ const teamOverviewCard = (
                   absolute bottom-0 right-0
                   flex h-9 w-9 items-center justify-center
                   rounded-xl
-                  border-2 border-slate-900
-                  bg-violet-600
-                  text-white
+                 border-2 border-white dark:border-slate-900
+                bg-violet-600
+                text-white
                   shadow-lg
                   transition
                   hover:bg-violet-500
@@ -1513,16 +1739,16 @@ const teamOverviewCard = (
 
                 <div className="profile-main-meta mt-2 space-y-1.5 text-[13px]">
                   <div className="flex items-center gap-2">
-                    <Mail size={14} className="shrink-0 text-slate-500" />
+                    <Mail size={14} className="shrink-0 text-slate-500 dark:text-slate-400" />
                     <span>{profile.email || "—"}</span>
                   </div>
 
                   <div className="flex items-center gap-2">
-                    <Phone size={14} className="shrink-0 text-slate-500" />
+                    <Phone size={14} className="shrink-0 text-slate-500 dark:text-slate-400" />
                     <span>{profile.phone || "—"}</span>
                   </div>
 
-                  <div className="text-slate-700">
+                  <div className="text-slate-700 dark:text-slate-300">
                     {profile.job_title || "—"}
                   </div>
                 </div>
@@ -1592,9 +1818,10 @@ const teamOverviewCard = (
                 setProfileSaveError("");
                 setIsEditingProfile(false);
               }}
-              className="profile-edit-cancel ml-2 inline-flex items-center justify-center rounded-[15px] px-4 py-2.5 text-sm font-semibold transition-all duration-200 disabled:cursor-not-allowed disabled:opacity-50"
+              className="profile-edit-cancel ml-2 inline-flex items-center justify-center gap-2 rounded-[15px] px-4 py-2.5 text-sm font-semibold transition-all duration-200 disabled:cursor-not-allowed disabled:opacity-50"
             >
-              Cancel
+              <X size={15} />
+              <span>Cancel</span>
             </button>
           )}
             {profileSaveError && (
@@ -1840,9 +2067,9 @@ const teamOverviewCard = (
                     }))
                   }}
                   rows={3}
-                  className="profile-edit-input mt-1 w-full resize-none rounded-lg px-3 py-2 text-[13px] outline-none disabled:cursor-not-allowed disabled:opacity-60"
+                  className="profile-edit-input mt-1 min-h-[72px] max-h-[88px] w-full resize-none rounded-lg px-3 py-2 text-[13px] leading-5 outline-none disabled:cursor-not-allowed disabled:opacity-60"
                 />
-                <p className="profile-bio-counter mt-1 text-right text-[11px]">
+                <p className="profile-bio-counter mt-1 pr-1 text-right text-[10px] leading-none">
                 {profileForm.bio.length}/300
               </p>
               </>
