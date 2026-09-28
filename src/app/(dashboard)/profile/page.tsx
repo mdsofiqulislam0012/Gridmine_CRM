@@ -27,6 +27,7 @@ import {
   CheckCircle2,
 } from "lucide-react";
 import { createClient } from "@/lib/supabase/client";
+import { useAuth } from "@/lib/auth";
 
 type Profile = {
   full_name: string;
@@ -48,9 +49,19 @@ type TeamMember = {
   last_seen_at: string | null;
 };
 
+type ActivityLog = {
+  id: string;
+  user_id: string;
+  action: string;
+  title: string;
+  description: string | null;
+  metadata: Record<string, unknown>;
+  created_at: string;
+};
+
 export default function ProfilePage() {
   const supabase = useMemo(() => createClient(), []);
-
+  const { refreshUser } = useAuth();
   const [profile, setProfile] = useState<Profile>({
     full_name: "",
     email: "",
@@ -61,6 +72,12 @@ export default function ProfilePage() {
     role: "user",
   });
   const [teamMembers, setTeamMembers] = useState<TeamMember[]>([]);
+  const [activityLogs, setActivityLogs] = useState<ActivityLog[]>([]);
+  const [activityLoading, setActivityLoading] = useState(false);
+  const [activityError, setActivityError] = useState("");
+  const [onlineUserIds, setOnlineUserIds] = useState<Set<string>>(
+  () => new Set()
+);
   const [memberSearch, setMemberSearch] = useState("");
   const [roleFilter, setRoleFilter] = useState("all");
   const [currentPage, setCurrentPage] = useState(1);
@@ -88,6 +105,14 @@ export default function ProfilePage() {
   const [avatarFile, setAvatarFile] = useState<File | null>(null);
   const [avatarUploading, setAvatarUploading] = useState(false);
   const [avatarPreview, setAvatarPreview] = useState("");
+  useEffect(() => {
+  return () => {
+    if (avatarPreview.startsWith("blob:")) {
+      URL.revokeObjectURL(avatarPreview);
+    }
+  };
+}, [avatarPreview]);
+
   const [profileSaveError, setProfileSaveError] = useState("");
   const [profileSaveSuccess, setProfileSaveSuccess] = useState("");
 
@@ -104,6 +129,59 @@ const hasProfileChanges =
   profileForm.job_title.trim() !== (profile.job_title || "").trim() ||
   profileForm.bio.trim() !== (profile.bio || "").trim();
 
+const loadActivityLogs = async () => {
+  if (!currentUserId) return;
+
+  setActivityLoading(true);
+  setActivityError("");
+
+  try {
+    const { data, error } = await supabase
+      .from("activity_logs")
+      .select("*")
+      .eq("user_id", currentUserId)
+      .order("created_at", { ascending: false })
+      .limit(50);
+
+    if (error) {
+      setActivityError(error.message);
+      return;
+    }
+
+    setActivityLogs((data ?? []) as ActivityLog[]);
+  } catch (error) {
+    console.error("Activity load error:", error);
+    setActivityError("Unable to load activity.");
+  } finally {
+    setActivityLoading(false);
+  }
+};
+
+
+
+  useEffect(() => {
+  const syncPresence = (event?: Event) => {
+    const onlineIds =
+      event instanceof CustomEvent && Array.isArray(event.detail)
+        ? event.detail
+        : (
+            window as Window & {
+              __crmOnlineUserIds?: string[];
+            }
+          ).__crmOnlineUserIds ?? [];
+
+    setOnlineUserIds(new Set(onlineIds));
+  };
+
+  // Initial state
+  syncPresence();
+
+  window.addEventListener("crm-presence-sync", syncPresence);
+
+  return () => {
+    window.removeEventListener("crm-presence-sync", syncPresence);
+  };
+}, []);
 
   useEffect(() => {
   const handleOutsideClick = (event: MouseEvent) => {
@@ -226,6 +304,54 @@ useEffect(() => {
   }, [supabase]);
 
   useEffect(() => {
+  const channel = supabase
+    .channel("profile-page-live")
+    .on(
+      "postgres_changes",
+      {
+        event: "*",
+        schema: "public",
+        table: "profiles",
+      },
+      async () => {
+        const {
+          data: { user },
+        } = await supabase.auth.getUser();
+
+        if (!user) return;
+
+        const { data: updatedProfile } = await supabase
+          .from("profiles")
+          .select(
+            "id, full_name, email, phone, job_title, bio, avatar_url, role, last_seen_at"
+          )
+          .eq("id", user.id)
+          .maybeSingle();
+
+        if (updatedProfile) {
+          setProfile(updatedProfile as Profile);
+        }
+
+        const { data: updatedMembers } = await supabase
+          .from("profiles")
+          .select(
+            "id, full_name, email, phone, job_title, avatar_url, role, last_seen_at"
+          )
+          .order("full_name", { ascending: true });
+
+        if (updatedMembers) {
+          setTeamMembers(updatedMembers as TeamMember[]);
+        }
+      }
+    )
+    .subscribe();
+
+  return () => {
+    supabase.removeChannel(channel);
+  };
+}, [supabase]);
+
+  useEffect(() => {
   const updateLastSeen = async () => {
     const {
       data: { user },
@@ -282,7 +408,7 @@ setTeamMembers((members) =>
 };
 
   const activeMemberCount = teamMembers.filter((member) =>
-  isMemberActive(member.last_seen_at)
+  onlineUserIds.has(member.id)
 ).length;
 
 const currentMember = teamMembers.find(
@@ -372,6 +498,40 @@ const teamStats = [
   },
 ];
 
+const compressAvatar = async (file: File): Promise<File> => {
+  const image = await createImageBitmap(file);
+
+  const maxSize = 800;
+  const scale = Math.min(1, maxSize / Math.max(image.width, image.height));
+
+  const width = Math.round(image.width * scale);
+  const height = Math.round(image.height * scale);
+
+  const canvas = document.createElement("canvas");
+  canvas.width = width;
+  canvas.height = height;
+
+  const ctx = canvas.getContext("2d");
+
+  if (!ctx) {
+    image.close();
+    return file;
+  }
+
+  ctx.drawImage(image, 0, 0, width, height);
+  image.close();
+
+  const blob = await new Promise<Blob | null>((resolve) => {
+    canvas.toBlob(resolve, "image/webp", 0.82);
+  });
+
+  if (!blob) return file;
+
+  return new File([blob], "avatar.webp", {
+    type: "image/webp",
+  });
+};
+
 const handleAvatarUpload = async (file: File) => {
   if (!currentUserId) return;
 
@@ -379,13 +539,16 @@ const handleAvatarUpload = async (file: File) => {
   setProfileSaveError("");
 
   try {
-    const filePath = `${currentUserId}/avatar`;
+  const compressedFile = await compressAvatar(file);
+
+  const filePath = `${currentUserId}/avatar-${Date.now()}.webp`;
 
     const { error: uploadError } = await supabase.storage
       .from("avatars")
-      .upload(filePath, file, {
-        upsert: true,
-        contentType: file.type,
+      .upload(filePath, compressedFile, {
+        upsert: false,
+        contentType: compressedFile.type,
+        cacheControl: "0",
       });
 
     if (uploadError) {
@@ -414,12 +577,64 @@ const handleAvatarUpload = async (file: File) => {
       return;
     }
 
+    void (async () => {
+  const { data: avatarFiles } = await supabase.storage
+    .from("avatars")
+    .list(currentUserId);
+
+  if (!avatarFiles) return;
+
+  const currentFileName = filePath.split("/").pop();
+
+  const oldFiles = avatarFiles
+    .filter((item) => item.name !== currentFileName)
+    .map((item) => `${currentUserId}/${item.name}`);
+
+  if (oldFiles.length > 0) {
+    await supabase.storage
+      .from("avatars")
+      .remove(oldFiles);
+  }
+})();
+
     setProfile((current) => ({
       ...current,
       avatar_url: avatarUrl,
     }));
 
-    setAvatarPreview("");
+    setTeamMembers((members) =>
+  members.map((member) =>
+    member.id === currentUserId
+      ? {
+          ...member,
+          avatar_url: avatarUrl,
+        }
+      : member
+  )
+);
+
+const { error: avatarActivityError } = await supabase
+  .from("activity_logs")
+  .insert({
+    user_id: currentUserId,
+    action: "avatar_updated",
+    title: "Profile photo updated",
+    description: "You changed your profile photo.",
+  });
+
+if (avatarActivityError) {
+  console.error("Avatar activity log error:", avatarActivityError);
+}
+
+const remoteAvatar = new Image();
+
+remoteAvatar.onload = () => {
+  setAvatarPreview("");
+};
+
+remoteAvatar.src = avatarUrl;
+
+    void refreshUser();
     setAvatarFile(null);
   } catch (error) {
     console.error("Avatar upload error:", error);
@@ -511,7 +726,19 @@ if (bio.length > 300) {
           : member
       )
     );
+    await refreshUser();
+    const { error: activityInsertError } = await supabase
+  .from("activity_logs")
+  .insert({
+    user_id: currentUserId,
+    action: "profile_updated",
+    title: "Profile updated",
+    description: "You updated your profile information.",
+  });
 
+if (activityInsertError) {
+  console.error("Activity log insert error:", activityInsertError);
+}
     setProfileSaveSuccess("Profile updated successfully.");
 
     setIsEditingProfile(false);
@@ -588,6 +815,26 @@ const { data: refreshedMembers, error: refreshError } = await supabase
 if (!refreshError) {
   setTeamMembers((refreshedMembers ?? []) as TeamMember[]);
 }
+
+const { error: inviteActivityError } = await supabase
+  .from("activity_logs")
+  .insert({
+    user_id: currentUserId,
+    action: "member_invited",
+    title: "Team member invited",
+    description: `You invited ${email} as ${
+      inviteRole === "sub_admin" ? "Sub Admin" : "Employee"
+    }.`,
+    metadata: {
+      invited_email: email,
+      role: inviteRole,
+    },
+  });
+
+if (inviteActivityError) {
+  console.error("Invite activity log error:", inviteActivityError);
+}
+
 setInviteSuccess(`Invitation sent to ${email}`);
 setInviteFullName("");
 setInviteEmail("");
@@ -645,6 +892,31 @@ const handleRoleUpdate = async () => {
       )
     );
 
+    const { error: roleActivityError } = await supabase
+  .from("activity_logs")
+  .insert({
+    user_id: currentUserId,
+    action: "member_role_updated",
+    title: "Member role changed",
+    description: `You changed ${
+      roleEditMember.full_name || roleEditMember.email || "a team member"
+    }'s role to ${
+      roleEditValue === "admin"
+        ? "Admin"
+        : roleEditValue === "sub_admin"
+          ? "Sub Admin"
+          : "Employee"
+    }.`,
+    metadata: {
+      member_id: roleEditMember.id,
+      new_role: roleEditValue,
+    },
+  });
+
+if (roleActivityError) {
+  console.error("Role activity log error:", roleActivityError);
+}
+
     setRoleEditMember(null);
     setOpenMemberMenuId(null);
   } catch (error) {
@@ -692,6 +964,25 @@ const handleRemoveMember = async () => {
     setTeamMembers((members) =>
       members.filter((member) => member.id !== removeMember.id)
     );
+
+    const { error: removeActivityError } = await supabase
+  .from("activity_logs")
+  .insert({
+    user_id: currentUserId,
+    action: "member_removed",
+    title: "Team member removed",
+    description: `You removed ${
+      removeMember.full_name || removeMember.email || "a team member"
+    } from the team.`,
+    metadata: {
+      member_id: removeMember.id,
+      member_email: removeMember.email,
+    },
+  });
+
+if (removeActivityError) {
+  console.error("Remove member activity log error:", removeActivityError);
+}
 
     setRemoveMember(null);
     setOpenMemberMenuId(null);
@@ -782,8 +1073,8 @@ const teamOverviewCard = (
   }
 
   return (
-  <div className="min-h-[calc(100vh-60px)] w-full bg-[rgba(247,248,252,1)] px-5 pt-3 pb-6 md:px-6 lg:px-7 profile-theme-page">
-    <div className="grid w-full grid-cols-1 gap-4 lg:grid-cols-[minmax(0,1.9fr)_minmax(340px,1fr)]">
+  <div className="h-[calc(100vh-60px)] w-full overflow-hidden bg-[rgba(247,248,252,1)] px-5 pt-3 pb-6 md:px-6 lg:px-7 profile-theme-page">
+    <div className="grid h-full min-h-0 w-full grid-cols-1 gap-4 lg:grid-cols-[minmax(0,1.9fr)_minmax(340px,1fr)] lg:grid-rows-[auto_auto_auto_minmax(0,1fr)]">
 
       {/* Error */}
       {error && (
@@ -1081,7 +1372,7 @@ const teamOverviewCard = (
   )}
 
     {/* 3D PROFILE CARD */}
-      <div className="profile-tabs order-3 profile-tabs order-3 -mt-2 flex w-full items-center gap-1 overflow-x-auto whitespace-nowrap scrollbar-none lg:col-span-2 lg:row-start-3">
+      <div className="profile-tabs order-3 profile-tabs order-3 -mt-2 flex w-full items-center gap-1 overflow-x-auto overflow-y-hidden whitespace-nowrap scrollbar-none lg:col-span-2 lg:row-start-3">
         <button
         type="button"
         onClick={() => setActiveProfileTab("team")}
@@ -1097,12 +1388,15 @@ const teamOverviewCard = (
 
         <button
         type="button"
-        onClick={() => setActiveProfileTab("activity")}
-        className={`profile-tab-button flex h-12 shrink-0 shrink-0 shrink-0 items-center gap-2 border-b-2 px-4 text-sm font-medium transition ${
-        activeProfileTab === "activity"
-          ? "profile-tab-active"
-          : "profile-tab-idle"
-      }`}
+        onClick={() => {
+        setActiveProfileTab("activity");
+        void loadActivityLogs();
+      }}
+        className={`profile-tab-button flex h-12 shrink-0 items-center gap-2 border-b-2 px-4 text-sm font-medium transition ${
+          activeProfileTab === "activity"
+            ? "profile-tab-active"
+            : "profile-tab-idle"
+        }`}
       >
         <Activity size={16} />
         <span>My Activity</span>
@@ -1135,7 +1429,7 @@ const teamOverviewCard = (
       </button>
       </div>
       {activeProfileTab === "team" && (
-     <div className="profile-team-list-card order-4 mt-0 rounded-2xl border p-4 sm:p-5 lg:-mt-4 lg:col-span-2 lg:row-start-4">
+     <div className="profile-team-list-card flex h-full min-h-0 flex-col order-4 mt-0 rounded-2xl border px-4 pb-4 pt-2 sm:px-5 sm:pb-5 sm:pt-2 lg:-mt-4 lg:col-span-2 lg:row-start-4">
       <div className="flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
         <div>
           <h2 className="profile-team-list-title text-lg font-semibold">
@@ -1194,8 +1488,8 @@ const teamOverviewCard = (
       </div>
       
 
-      <div className="profile-team-table mt-5 overflow-hidden rounded-xl">
-        <div className="profile-team-table-head grid grid-cols-[40px_1.6fr_1fr_1.6fr_1.2fr_0.8fr_1fr_60px] items-center px-4 py-3 text-xs font-medium">
+      <div className="profile-team-table mt-1 flex min-h-0 flex-1 flex-col overflow-hidden rounded-xl">
+        <div className="profile-team-table-head grid grid-cols-[40px_1.6fr_1fr_1.6fr_1.2fr_0.8fr_1fr_60px] items-center px-4 py-2 text-xs font-medium">
           <span>#</span>
           <span>Name</span>
           <span>Role</span>
@@ -1206,14 +1500,16 @@ const teamOverviewCard = (
           <span className="text-center">Action</span>
         </div>
 
+        <div className="max-h-[220px] overflow-y-auto overscroll-contain">
+
         {paginatedTeamMembers.map((member, index) => {
     const isCurrentUser = member.id === currentUserId;
-  const isActive = isMemberActive(member.last_seen_at);
+    const isActive = onlineUserIds.has(member.id);
 
   return (
     <div
       key={member.id}
-      className="profile-team-table-row grid grid-cols-[40px_1.6fr_1fr_1.6fr_1.2fr_0.8fr_1fr_60px] items-center px-4 py-3 text-sm"
+      className="profile-team-table-row grid grid-cols-[40px_1.6fr_1fr_1.6fr_1.2fr_0.8fr_1fr_60px] items-center px-4 py-1 text-sm"
     >
       <span className="profile-team-row-index">{index + 1}</span>
 
@@ -1291,7 +1587,7 @@ const teamOverviewCard = (
             : "profile-team-status-offline"
         }
       >
-          {getMemberStatus(member.last_seen_at)}
+          {isActive ? "Online" : "Offline"}
         </span>
       </div>
 
@@ -1361,8 +1657,9 @@ const teamOverviewCard = (
     </p>
   </div>
 )}
+</div>
 
-<div className="profile-team-table-footer flex items-center justify-between px-4 py-3 text-xs">
+<div className="profile-team-table-footer mt-auto flex shrink-0 items-center justify-between px-4 py-3 text-xs">
   <span className="profile-team-table-summary">
     Showing {filteredTeamMembers.length} of {totalMembers} members
   </span>
@@ -1432,7 +1729,21 @@ const teamOverviewCard = (
       </div>
     </div>
 
-    <div className="mt-5 flex min-h-[160px] flex-col items-center justify-center rounded-xl border border-dashed border-slate-200 bg-slate-50/80 px-6 text-center dark:border-slate-700 dark:bg-slate-950/30">
+    <div className="mt-5 min-h-[160px] rounded-xl border border-dashed border-slate-200 bg-slate-50/80 p-4 dark:border-slate-700 dark:bg-slate-950/30">
+  {activityLoading ? (
+    <div className="flex min-h-[130px] items-center justify-center">
+      <p className="text-sm text-slate-500 dark:text-slate-400">
+        Loading activity...
+      </p>
+    </div>
+  ) : activityError ? (
+    <div className="flex min-h-[130px] items-center justify-center text-center">
+      <p className="text-sm text-red-500">
+        {activityError}
+      </p>
+    </div>
+  ) : activityLogs.length === 0 ? (
+    <div className="flex min-h-[130px] flex-col items-center justify-center text-center">
       <div className="flex h-11 w-11 items-center justify-center rounded-full bg-slate-100 text-slate-500 dark:bg-slate-800 dark:text-slate-400">
         <Activity size={20} />
       </div>
@@ -1445,8 +1756,40 @@ const teamOverviewCard = (
         Your recent actions will appear here.
       </p>
     </div>
+  ) : (
+    <div className="space-y-2">
+      {activityLogs.map((log) => (
+        <div
+          key={log.id}
+          className="flex items-start gap-3 rounded-xl border border-slate-200 bg-white px-4 py-3 dark:border-slate-800 dark:bg-slate-900/70"
+        >
+          <div className="mt-0.5 flex h-9 w-9 shrink-0 items-center justify-center rounded-lg bg-violet-50 text-violet-600 dark:bg-violet-500/10 dark:text-violet-300">
+            <Activity size={16} />
+          </div>
+
+          <div className="min-w-0 flex-1">
+            <p className="text-sm font-semibold text-slate-800 dark:text-slate-100">
+              {log.title}
+            </p>
+
+            {log.description && (
+              <p className="mt-0.5 text-xs text-slate-500 dark:text-slate-400">
+                {log.description}
+              </p>
+            )}
+
+            <p className="mt-1 text-[11px] text-slate-400 dark:text-slate-500">
+              {new Date(log.created_at).toLocaleString()}
+            </p>
+          </div>
+        </div>
+      ))}
+    </div>
+      )}
   </div>
+</div>
 )}
+
 
 {activeProfileTab === "security" && (
   <div className="order-4 mt-0 min-h-[250px] lg:-mt-4 rounded-2xl border border-slate-200 bg-white p-5 text-slate-900 dark:border-slate-800 dark:bg-slate-900/50 dark:text-slate-100 lg:col-span-2 lg:row-start-4">
@@ -1732,9 +2075,18 @@ const teamOverviewCard = (
                   </span>
 
                   <span className="profile-main-status flex items-center gap-2 text-sm">
-                    <span className="h-2.5 w-2.5 rounded-full bg-emerald-400" />
-                    Online
-                  </span>
+                  <span
+                    className={`h-2.5 w-2.5 rounded-full ${
+                      currentUserId && onlineUserIds.has(currentUserId)
+                        ? "bg-emerald-400"
+                        : "bg-slate-500"
+                    }`}
+                  />
+
+                  {currentUserId && onlineUserIds.has(currentUserId)
+                    ? "Online"
+                    : "Offline"}
+                </span>
                 </div>
 
                 <div className="profile-main-meta mt-2 space-y-1.5 text-[13px]">

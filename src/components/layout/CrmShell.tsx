@@ -15,10 +15,12 @@ export default function CrmShell({ children }: { children: React.ReactNode }) {
   useEffect(() => {
   const loadUserRole = async () => {
     const {
-      data: { user: authUser },
-    } = await supabase.auth.getUser();
+  data: { session },
+  } = await supabase.auth.getSession();
 
-    if (!authUser) return;
+  const authUser = session?.user;
+
+  if (!authUser) return;
 
     const { data, error } = await supabase
       .from("profiles")
@@ -112,13 +114,110 @@ useEffect(() => {
   };
 }, []);
 
+useEffect(() => {
+  console.log("PRESENCE EFFECT START");
+  let cancelled = false;
+  let presenceChannel: ReturnType<typeof supabase.channel> | null = null;
+  let presenceConnecting = false;
+
+  const connectPresence = async () => {
+
+    if (presenceConnecting || presenceChannel) return;
+    presenceConnecting = true;
+   const {
+  data: { session },
+} = await supabase.auth.getSession();
+
+const authUser = session?.user;
+if (cancelled) return;
+
+console.log(
+  "PRESENCE SESSION USER:",
+  authUser?.id ?? null,
+  authUser?.email ?? null
+);
+
+  if (!authUser) {
+    presenceConnecting = false;
+    return;
+  }
+
+    presenceChannel = supabase
+  .channel("crm-online-users", {
+    config: {
+      presence: {
+        key: authUser.id,
+      },
+    },
+  })
+  .on("presence", { event: "sync" }, () => {
+    const state = presenceChannel?.presenceState() ?? {};
+    const onlineIds = Object.keys(state);
+
+    (
+      window as Window & {
+        __crmOnlineUserIds?: string[];
+      }
+    ).__crmOnlineUserIds = onlineIds;
+
+    window.dispatchEvent(
+      new CustomEvent("crm-presence-sync", {
+        detail: onlineIds,
+      })
+    );
+  });
+
+    presenceChannel.subscribe(async (status) => {
+  console.log("PRESENCE STATUS:", status, "USER:", authUser.id);
+
+  if (status !== "SUBSCRIBED") return;
+
+  const trackResult = await presenceChannel?.track({
+    user_id: authUser.id,
+    online_at: new Date().toISOString(),
+  });
+
+  console.log("PRESENCE TRACK RESULT:", trackResult);
+});
+  };
+
+  const {
+  data: { subscription },
+} = supabase.auth.onAuthStateChange((_event, session) => {
+  if (session?.user && !presenceChannel) {
+    void connectPresence();
+  }
+});
+
+  connectPresence();
+
+  return () => {
+    cancelled = true;
+    subscription.unsubscribe();
+    if (presenceChannel) {
+      void presenceChannel.untrack();
+      void supabase.removeChannel(presenceChannel);
+    }
+  };
+}, [supabase]);
+
 
   return (
-    <div className="flex min-h-screen">
+    <div
+      className={`flex ${
+        pathname === "/profile" ? "h-screen overflow-hidden" : "min-h-screen"
+      }`}
+    >
       <AppSidebar open={sidebarOpen} onClose={() => setSidebarOpen(false)} />
       <div className="flex min-w-0 flex-1 flex-col">
         <AppHeader onMenuClick={() => setSidebarOpen(true)} />
-        <main className="flex-1 overflow-x-hidden p-4">{children}</main>
+        <main
+        className={`min-h-0 flex-1 overflow-x-hidden ${
+          pathname === "/profile" ? "overflow-hidden p-0" : "p-4"
+        }`}
+      >
+        {children}
+      </main>
       </div>
     </div>
   );

@@ -186,24 +186,61 @@ export function AuthProvider({
   name,
   password
 ) => {
-  const {
-    data: { session },
-    error: sessionError,
-  } = await supabase.auth.getSession();
+  let {
+  data: { session },
+  error: sessionError,
+} = await supabase.auth.getSession();
 
-  if (sessionError) {
-    return {
-      ok: false,
-      error: sessionError.message,
-    };
-  }
+if (sessionError) {
+  return {
+    ok: false,
+    error: sessionError.message,
+  };
+}
 
-  if (!session) {
-    return {
-      ok: false,
-      error: "Invitation session not found. Please open the invitation link again.",
-    };
+/* Restore Supabase invite session from URL hash */
+if (!session && typeof window !== "undefined") {
+  const hashParams = new URLSearchParams(
+    window.location.hash.replace(/^#/, "")
+  );
+
+  const accessToken = hashParams.get("access_token");
+  const refreshToken = hashParams.get("refresh_token");
+
+  if (accessToken && refreshToken) {
+    const {
+      data: sessionData,
+      error: setSessionError,
+    } = await supabase.auth.setSession({
+      access_token: accessToken,
+      refresh_token: refreshToken,
+    });
+
+    if (setSessionError) {
+      return {
+        ok: false,
+        error: setSessionError.message,
+      };
+    }
+
+    session = sessionData.session;
+
+    if (session && typeof window !== "undefined") {
+  window.history.replaceState(
+    null,
+    "",
+    `${window.location.pathname}${window.location.search}`
+  );
+}
   }
+}
+
+if (!session) {
+  return {
+    ok: false,
+    error: "Invitation session not found. Please open the invitation link again.",
+  };
+}
 
   const { data, error } = await supabase.auth.updateUser({
     password,
@@ -246,6 +283,34 @@ export function AuthProvider({
     await supabase.auth.signOut();
     setUser(null);
   };
+
+  useEffect(() => {
+  const profileChannel = supabase
+    .channel("auth-profile-live")
+    .on(
+      "postgres_changes",
+      {
+        event: "UPDATE",
+        schema: "public",
+        table: "profiles",
+      },
+      async () => {
+        const {
+          data: { user: authUser },
+        } = await supabase.auth.getUser();
+
+        if (!authUser) return;
+
+        const updatedUser = await getAppUser(supabase, authUser);
+        setUser(updatedUser);
+      }
+    )
+    .subscribe();
+
+  return () => {
+    supabase.removeChannel(profileChannel);
+  };
+}, [supabase]);
 
   return (
     <Ctx.Provider
