@@ -3,8 +3,7 @@
 import { useEffect, useMemo, useState } from "react";
 import { createClient } from "@/lib/supabase/client";
 import { useAuth } from "@/lib/auth";
-import { CheckCircle2, X } from "lucide-react";
-
+import { showGlobalToast } from "@/components/ui/GlobalToast";
 type Profile = {
   full_name: string;
   email: string;
@@ -31,19 +30,7 @@ export default function EditProfilePage() {
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [uploading, setUploading] = useState(false);
-  const [message, setMessage] = useState("");
   const [error, setError] = useState("");
-
-  // Auto hide success message
-  useEffect(() => {
-    if (!message) return;
-
-    const timer = setTimeout(() => {
-      setMessage("");
-    }, 3000);
-
-    return () => clearTimeout(timer);
-  }, [message]);
 
   // Load profile
   useEffect(() => {
@@ -111,7 +98,6 @@ export default function EditProfilePage() {
 
     setUploading(true);
     setError("");
-    setMessage("");
 
     const filePath = `${userId}/avatar`;
 
@@ -155,7 +141,12 @@ export default function EditProfilePage() {
 
     await refreshUser();
 
-    setMessage("Profile photo updated successfully.");
+    showGlobalToast({
+    title: "Profile photo updated",
+    message: "Profile photo updated successfully.",
+    type: "success",
+    duration: 2600,
+    });
     setUploading(false);
   };
 
@@ -164,7 +155,6 @@ export default function EditProfilePage() {
     if (!userId) return;
 
     setSaving(true);
-    setMessage("");
     setError("");
 
     const { error: profileError } = await supabase
@@ -192,7 +182,12 @@ export default function EditProfilePage() {
 
     await refreshUser();
 
-    setMessage("Profile updated successfully.");
+    showGlobalToast({
+    title: "Profile updated",
+    message: "Profile updated successfully.",
+    type: "success",
+    duration: 2600,
+    });
     setSaving(false);
   };
 
@@ -216,40 +211,6 @@ export default function EditProfilePage() {
       </div>
 
       {/* Success Toast */}
-      {message && (
-        <div
-          className="toast-card-motion fixed bottom-6 right-6 z-[100] w-[320px] overflow-hidden rounded-2xl border border-gray-200 bg-white shadow-[0_18px_45px_rgba(15,23,42,0.16)]"
-        >
-          <div className="flex items-center gap-3 px-4 py-3.5">
-            <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-[14px] bg-[rgba(76,201,140,0.12)]">
-              <CheckCircle2
-                size={20}
-                className="text-[rgba(35,167,103,0.95)]"
-              />
-            </div>
-
-            <div className="min-w-0 flex-1">
-              <p className="text-sm font-bold text-[rgba(28,24,46,0.95)]">
-                Changes saved
-              </p>
-
-              <p className="mt-0.5 text-xs text-[rgba(91,83,116,0.68)]">
-                {message}
-              </p>
-            </div>
-
-            <button
-              type="button"
-              onClick={() => setMessage("")}
-              className="rounded-lg p-1.5 text-[rgba(100,93,120,0.65)] transition hover:bg-[rgba(120,100,180,0.08)]"
-            >
-              <X size={16} />
-            </button>
-          </div>
-
-          <div className="toast-progress h-[3px] w-full bg-green-500" />
-        </div>
-      )}
 
       {/* Error */}
       {error && (

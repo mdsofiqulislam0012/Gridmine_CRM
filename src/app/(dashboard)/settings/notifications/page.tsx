@@ -3,6 +3,7 @@
 import { useEffect, useMemo, useState } from "react";
 import { Bell, CheckCircle2, Mail, X } from "lucide-react";
 import { createClient } from "@/lib/supabase/client";
+import { showGlobalToast } from "@/components/ui/GlobalToast";
 
 export default function NotificationSettingsPage() {
   const supabase = useMemo(() => createClient(), []);
@@ -12,7 +13,6 @@ export default function NotificationSettingsPage() {
   const [customerUpdates, setCustomerUpdates] = useState(true);
 
   const [settingsReady, setSettingsReady] = useState(false);
-  const [success, setSuccess] = useState("");
 
       useEffect(() => {
       const loadNotificationSettings = async () => {
@@ -53,7 +53,6 @@ export default function NotificationSettingsPage() {
     }, [supabase]);
 
     const handleSave = async () => {
-  setSuccess("");
 
   const {
     data: { user },
@@ -88,11 +87,12 @@ export default function NotificationSettingsPage() {
     return;
   }
 
-  setSuccess("Notification preferences saved successfully!");
-
-  setTimeout(() => {
-    setSuccess("");
-  }, 2600);
+  showGlobalToast({
+  title: "Changes saved",
+  message: "Notification settings saved successfully!",
+  type: "success",
+  duration: 2600,
+  });
 };
 
   if (!settingsReady) {
@@ -105,34 +105,6 @@ export default function NotificationSettingsPage() {
 
   return (
     <div className="mx-auto w-full max-w-4xl space-y-6 p-6">
-      {success && (
-        <div className="toast-card-motion fixed bottom-6 right-6 z-[100] w-[320px] overflow-hidden rounded-2xl border border-gray-200 bg-white shadow-[0_18px_45px_rgba(15,23,42,0.16)]">
-          <div className="flex items-start gap-3 px-4 py-4">
-            <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-green-50">
-              <CheckCircle2 className="h-5 w-5 text-green-500" />
-            </div>
-
-            <div className="min-w-0 flex-1">
-              <p className="text-sm font-semibold text-gray-900">
-                Changes saved
-              </p>
-              <p className="mt-0.5 text-xs text-gray-400">
-                {success}
-              </p>
-            </div>
-
-            <button
-              type="button"
-              onClick={() => setSuccess("")}
-              className="flex h-7 w-7 items-center justify-center rounded-md text-gray-400 hover:bg-gray-100"
-            >
-              <X size={14} />
-            </button>
-          </div>
-
-          <div className="toast-progress h-[3px] w-full bg-green-500" />
-        </div>
-      )}
 
       <div>
         <h1 className="text-xl font-bold text-gray-900">

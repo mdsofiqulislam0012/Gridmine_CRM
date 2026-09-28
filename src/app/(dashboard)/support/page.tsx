@@ -23,6 +23,7 @@ import {
   MailOpen,
 } from "lucide-react";
 import EmojiPicker from "emoji-picker-react";
+import { showGlobalToast } from "@/components/ui/GlobalToast";
 
 export default function SupportPage() {
   const searchParams = useSearchParams();
@@ -623,15 +624,6 @@ useEffect(() => {
   const [ticketSubject, setTicketSubject] = useState("");
   const [ticketMessage, setTicketMessage] = useState("");
   const [ticketPriority, setTicketPriority] = useState("medium");
-  const [success, setSuccess] = useState("");
-  const [liveNotification, setLiveNotification] = useState<{
-  title: string;
-  message: string;
-  ticketId: string | null;
-  senderName: string;
-  senderAvatar: string | null;
-  createdAt: string;
-  } | null>(null);
   const [replyMessage, setReplyMessage] = useState("");
   const [editingReplyId, setEditingReplyId] = useState<string | null>(null);
   const [editingReplyMessage, setEditingReplyMessage] = useState("");
@@ -768,20 +760,14 @@ useEffect(() => {
           senderProfile?.email ||
           "User";
 
-        setLiveNotification({
-          title: "New support ticket",
-          message:
-            notification.message ||
-            "A user created a new support ticket.",
-          ticketId: notification.ticket_id || null,
-          senderName,
-          senderAvatar: senderProfile?.avatar_url || null,
-          createdAt: notification.created_at || new Date().toISOString(),
-        });
-
-        window.setTimeout(() => {
-          setLiveNotification(null);
-        }, 5000);
+        showGlobalToast({
+        title: "New support ticket",
+        message:
+          notification.message ||
+          "A user created a new support ticket.",
+        type: "info",
+        duration: 5000,
+      });
       }
 
         // New message from a user
@@ -798,13 +784,11 @@ useEffect(() => {
             "User";
 
           // Current open conversation-এর message হলে bottom popup লাগবে না
-         setLiveNotification({
+         showGlobalToast({
           title: "You have a new message",
           message: `${senderName}: ${notification.message || ""}`,
-          ticketId: notification.ticket_id || null,
-          senderName,
-          senderAvatar: senderProfile?.avatar_url || null,
-          createdAt: notification.created_at || new Date().toISOString(),
+          type: "info",
+          duration: 5000,
         });
         }
       }
@@ -823,9 +807,12 @@ useEffect(() => {
 
   const handleCreateTicket = async () => {
     if (hasActiveTicket) {
-  setSuccess(
-    "You already have an active support ticket. Please wait until it is closed."
-  );
+  showGlobalToast({
+  title: "Active ticket exists",
+  message: "You already have an active support ticket. Please wait until it is closed.",
+  type: "info",
+  duration: 2600,
+  });
   return;
 }
   const cleanSubject = ticketSubject.trim();
@@ -891,11 +878,12 @@ useEffect(() => {
     setTicketMessage("");
     setTicketPriority("medium");
     setIsNewTicketOpen(false);
-    setSuccess("Support ticket created successfully!");
-
-    setTimeout(() => {
-      setSuccess(""); 
-    }, 2600);
+    showGlobalToast({
+    title: "Ticket created",
+    message: "Support ticket created successfully!",
+    type: "success",
+    duration: 2600,
+    });
     };
 
     const handleUpdateTicketStatus = async (newStatus: string) => {
@@ -994,11 +982,12 @@ useEffect(() => {
 
       setSelectedTicket(null);
 
-      setSuccess("Support ticket deleted successfully!");
-
-      setTimeout(() => {
-        setSuccess("");
-      }, 2600);
+     showGlobalToast({
+      title: "Ticket deleted",
+      message: "Support ticket deleted successfully!",
+      type: "success",
+      duration: 2600,
+      });
     };
 
         const handleSubmitReply = async () => {
@@ -1105,11 +1094,12 @@ useEffect(() => {
       setEditingReplyId(null);
       setEditingReplyMessage("");
 
-      setSuccess("Reply updated successfully!");
-
-      setTimeout(() => {
-        setSuccess("");
-      }, 2600);
+      showGlobalToast({
+      title: "Reply updated",
+      message: "Reply updated successfully!",
+      type: "success",
+      duration: 2600,
+      });
     };
 
     const handleToggleSavedMessage = async (replyId: string) => {
@@ -1240,11 +1230,12 @@ const handleToggleSavedTicket = async (ticketId: string) => {
       )
     );
 
-    setSuccess("Reply deleted successfully!");
-
-    setTimeout(() => {
-      setSuccess("");
-    }, 2600);
+    showGlobalToast({
+    title: "Reply deleted",
+    message: "Reply deleted successfully!",
+    type: "success",
+    duration: 2600,
+    });
   };
 
   return (
@@ -2090,92 +2081,8 @@ const handleToggleSavedTicket = async (ticketId: string) => {
           </div>
         </div>
         )}
-          </div>
-            </div>
-      {success && (
-        <div className="toast-card-motion fixed bottom-6 right-6 z-[100] w-[320px] overflow-hidden rounded-2xl border border-gray-200 bg-white shadow-[0_18px_45px_rgba(15,23,42,0.16)]">
-          <div className="px-4 py-3">
-            <p className="text-sm font-semibold text-gray-900">
-              Ticket Created
-            </p>
-
-            <p className="mt-1 text-sm text-gray-500">
-              {success}
-            </p>
-          </div>
-
-          <div className="toast-progress h-[3px] w-full bg-green-500" />
-        </div>
-      )}
-      {liveNotification && (
-  <div
-    className="toast-card-motion fixed bottom-6 right-6 z-[120] w-[320px] overflow-hidden rounded-2xl border border-gray-200 bg-white shadow-[0_18px_45px_rgba(15,23,42,0.16)] dark:border-slate-700 dark:bg-slate-900"
-  >
-    <div className="flex items-start gap-3 px-4 py-3">
-      <div className="h-10 w-10 shrink-0 overflow-hidden rounded-full bg-gray-200 dark:bg-slate-700">
-      {liveNotification.senderAvatar ? (
-        <img
-          src={liveNotification.senderAvatar}
-          alt={liveNotification.senderName}
-          className="h-full w-full object-cover"
-        />
-      ) : (
-        <div className="flex h-full w-full items-center justify-center text-sm font-bold text-gray-600 dark:text-slate-200">
-          {liveNotification.senderName.charAt(0).toUpperCase()}
-        </div>
-      )}
-    </div>
-
-      <div className="min-w-0 flex-1">
-        <div className="flex items-start justify-between gap-3">
-          <div>
-          <div className="flex items-center gap-2">
-          <p className="text-xs font-semibold text-gray-900 dark:text-slate-100">
-            {liveNotification.senderName}
-          </p>
-
-          <span className="text-[10px] text-gray-400 dark:text-slate-500">
-            {formatToastTime(liveNotification.createdAt)}
-          </span>
-        </div>
-
-          <p className="mt-0.5 text-sm font-semibold text-gray-900 dark:text-slate-100">
-            {liveNotification.title}
-          </p>
-        </div>
-
-          <button
-            type="button"
-            onClick={() => setLiveNotification(null)}
-            className="shrink-0 text-lg leading-none text-gray-400 transition hover:text-gray-700 dark:hover:text-slate-200"
-            aria-label="Close notification"
-          >
-            ×
-          </button>
-        </div>
-
-        <p className="mt-1 line-clamp-2 text-xs leading-5 text-gray-600 dark:text-slate-300">
-          {liveNotification.message}
-        </p>
-
-        {liveNotification.ticketId && (
-          <button
-            type="button"
-            onClick={() => {
-              window.location.href = `/support?ticket=${liveNotification.ticketId}`;
-              setLiveNotification(null);
-            }}
-            className="mt-2 text-xs font-semibold text-blue-600 transition hover:text-blue-700 hover:underline dark:text-blue-400"
-          >
-            Open conversation
-          </button>
-        )}
       </div>
     </div>
-
-    <div className="toast-progress h-[3px] w-full bg-blue-500" />
-  </div>
-)}
     </div>
   );
 }

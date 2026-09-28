@@ -5,7 +5,8 @@ import SummaryCard from "@/components/ui/SummaryCard";
 import DataTable from "@/components/ui/DataTable";
 import { Column, Customer } from "@/types";
 import { createClient } from "@/lib/supabase/client";
-import { CheckCircle2, Eye, Pencil, Plus, X } from "lucide-react";
+import {Eye, Pencil, Plus, X } from "lucide-react";
+import { showGlobalToast } from "@/components/ui/GlobalToast";
 
 export default function CustomersPage() {
   const [customers, setCustomers] = useState<Customer[]>([]);
@@ -16,7 +17,6 @@ export default function CustomersPage() {
   const [newCustomerOpen, setNewCustomerOpen] = useState(false);
 const [savingCustomer, setSavingCustomer] = useState(false);
 const [editingCustomerId, setEditingCustomerId] = useState<string | null>(null);
-const [success, setSuccess] = useState("");
 const [viewingCustomer, setViewingCustomer] = useState<Customer | null>(null);
 const [statusFilter, setStatusFilter] = useState<
   "all" | "active" | "inactive"
@@ -266,15 +266,14 @@ const handleCreateCustomer = async () => {
       )
     : [createdCustomer, ...current]
   );
-  setSuccess(
-  isEditMode
+  showGlobalToast({
+  title: isEditMode ? "Customer updated" : "Customer created",
+  message: isEditMode
     ? "Customer updated successfully!"
-    : "Customer created successfully!"
-);
-
-setTimeout(() => {
-  setSuccess("");
-}, 2600);
+    : "Customer created successfully!",
+  type: "success",
+  duration: 2600,
+});
 
   setNewCustomer({
   name: "",
@@ -477,35 +476,7 @@ setTimeout(() => {
 
   return (
     <div>
-      {success && (
-        <div className="toast-card-motion fixed bottom-6 right-6 z-[100] w-[320px] overflow-hidden rounded-2xl border border-gray-200 bg-white shadow-[0_18px_45px_rgba(15,23,42,0.16)]">
-          <div className="flex items-start gap-3 px-4 py-4">
-            <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-green-50">
-              <CheckCircle2 className="h-5 w-5 text-green-500" />
-            </div>
-
-            <div className="min-w-0 flex-1">
-              <p className="text-sm font-semibold text-gray-900">
-                Changes saved
-              </p>
-
-              <p className="mt-0.5 text-xs text-gray-400">
-                {success}
-              </p>
-            </div>
-
-            <button
-              type="button"
-              onClick={() => setSuccess("")}
-              className="flex h-7 w-7 items-center justify-center rounded-md text-gray-400 transition hover:bg-gray-100 hover:text-gray-600"
-            >
-              <X size={14} />
-            </button>
-          </div>
-
-          <div className="toast-progress h-[3px] w-full bg-green-500" />
-        </div>
-      )}
+      
       <PageHeader
         title="Customers"
         subtitle={

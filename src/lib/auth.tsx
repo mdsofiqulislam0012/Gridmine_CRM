@@ -199,7 +199,7 @@ if (sessionError) {
 }
 
 /* Restore Supabase invite session from URL hash */
-if (!session && typeof window !== "undefined") {
+if (typeof window !== "undefined") {
   const hashParams = new URLSearchParams(
     window.location.hash.replace(/^#/, "")
   );

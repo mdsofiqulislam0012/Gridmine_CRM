@@ -5,6 +5,7 @@ import { useRouter } from "next/navigation";
 import { createClient } from "@/lib/supabase/client";
 import { useSearchParams } from "next/navigation";
 import { CheckCircle2, X } from "lucide-react";
+import { showGlobalToast } from "@/components/ui/GlobalToast";
 
 type ProjectStatus =
   | "not_started"
@@ -42,7 +43,6 @@ export default function NewProjectPage() {
   };
 }, []);
   const [error, setError] = useState("");
-  const [success, setSuccess] = useState("");
   const [activeTab, setActiveTab] = useState<"project" | "settings">("project");
 
   const [form, setForm] = useState({
@@ -400,11 +400,14 @@ if (savedProject?.id) {
 
     setSaving(false);
 
-setSuccess(
-  isEditMode
+showGlobalToast({
+  title: isEditMode ? "Project updated" : "Project created",
+  message: isEditMode
     ? "Project updated successfully!"
-    : "Project created successfully!"
-);
+    : "Project created successfully!",
+  type: "success",
+  duration: 2600,
+});
 
 setTimeout(() => {
   if (savedProject?.project_code) {
@@ -425,37 +428,6 @@ setTimeout(() => {
 
   return (
     <div className="mx-auto max-w-4xl pb-12">
-      {success && (
-      <div className="fixed right-6 top-24 z-[100] w-[320px] overflow-hidden rounded-2xl border border-gray-200 bg-white shadow-[0_18px_45px_rgba(15,23,42,0.16)]">
-        <div className="flex items-start gap-3 px-4 py-4">
-
-          <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-green-50">
-            <CheckCircle2 className="h-5 w-5 text-green-500" />
-          </div>
-
-          <div className="min-w-0 flex-1">
-            <p className="text-sm font-semibold text-gray-900">
-              Changes saved
-            </p>
-
-            <p className="mt-0.5 text-xs text-gray-400">
-              {success}
-            </p>
-          </div>
-
-          <button
-            type="button"
-            onClick={() => setSuccess("")}
-            className="flex h-7 w-7 items-center justify-center rounded-md text-gray-400 transition hover:bg-gray-100 hover:text-gray-600"
-          >
-            <X size={14} />
-          </button>
-
-        </div>
-
-        <div className="toast-progress h-[3px] w-full bg-green-500" />
-      </div>
-    )}
       {/* Heading */}
       <div className="mb-4">
         <h1 className="text-xl font-bold text-gray-900">

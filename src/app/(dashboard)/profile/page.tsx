@@ -433,6 +433,14 @@ const filteredTeamMembers = teamMembers.filter((member) => {
     roleFilter === "all" || member.role === roleFilter;
 
   return matchesSearch && matchesRole;
+}).sort((a, b) => {
+  const roleOrder = {
+    admin: 1,
+    sub_admin: 2,
+    user: 3,
+  };
+
+  return roleOrder[a.role] - roleOrder[b.role];
 });
 
 const totalPages = Math.max(
@@ -1757,7 +1765,7 @@ const teamOverviewCard = (
       </p>
     </div>
   ) : (
-    <div className="space-y-2">
+    <div className="max-h-[260px] space-y-2 overflow-y-auto pr-1">
       {activityLogs.map((log) => (
         <div
           key={log.id}
@@ -1980,7 +1988,7 @@ const teamOverviewCard = (
                 <div
                   className="
                     relative flex h-24 w-24 items-center justify-center
-                    overflow-hidden rounded-[26px]
+                    overflow-hidden rounded-full
                     border border-[rgba(255,255,255,0.94)]
                     bg-[rgba(255,255,255,0.72)]
                     text-2xl font-bold text-[rgba(77,61,119,0.90)]
@@ -2012,7 +2020,7 @@ const teamOverviewCard = (
                 className="
                   absolute bottom-0 right-0
                   flex h-9 w-9 items-center justify-center
-                  rounded-xl
+                  rounded-full
                  border-2 border-white dark:border-slate-900
                 bg-violet-600
                 text-white
@@ -2426,7 +2434,7 @@ const teamOverviewCard = (
               </p>
               </>
               ) : (
-                <p className="profile-bio-text profile-info-value mt-1 whitespace-pre-wrap text-[14px] leading-7">
+                <p className="profile-bio-text profile-info-value mt-1 line-clamp-2 min-h-[40px] overflow-hidden text-[13px] leading-5">
                   {profile.bio || "No bio added yet."}
                 </p>
               )}

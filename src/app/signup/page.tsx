@@ -142,6 +142,8 @@ export default function SignupPage() {
 
             <input
               type="password"
+              name="new-password"
+              autoComplete="new-password"
               value={password}
               onChange={(e) => setPassword(e.target.value)}
               className="w-full rounded-md border border-border-subtle px-3 py-2 text-[13.5px] outline-none focus:border-brand focus:ring-2 focus:ring-brand/20"
@@ -155,6 +157,8 @@ export default function SignupPage() {
 
             <input
               type="password"
+              name="confirm-new-password"
+              autoComplete="new-password"
               value={confirmPassword}
               onChange={(e) => setConfirmPassword(e.target.value)}
               className="w-full rounded-md border border-border-subtle px-3 py-2 text-[13.5px] outline-none focus:border-brand focus:ring-2 focus:ring-brand/20"

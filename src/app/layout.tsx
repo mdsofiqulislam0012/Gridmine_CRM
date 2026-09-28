@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import "./globals.css";
 import { AuthProvider } from "@/lib/auth";
+import GlobalToast from "@/components/ui/GlobalToast";
 
 export const metadata: Metadata = {
   title: "Gridmine CRM",
@@ -39,6 +40,7 @@ export default function RootLayout({
 
       <body className="min-h-full text-[13.5px] text-foreground">
         <AuthProvider>{children}</AuthProvider>
+        <GlobalToast />
       </body>
     </html>
   );

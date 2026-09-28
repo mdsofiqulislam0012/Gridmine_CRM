@@ -684,15 +684,6 @@ useEffect(() => {
         <UserRound size={17} />
         My Profile
       </Link>
-
-      <Link
-        href="/profile/edit"
-        onClick={() => setProfileOpen(false)}
-        className="flex items-center gap-3 rounded-lg px-3 py-2.5 text-sm font-medium text-gray-700 transition hover:bg-gray-50"
-      >
-        <Pencil size={17} />
-        Edit Profile
-      </Link>
       <Link
   href="/settings/account"
   onClick={() => setProfileOpen(false)}

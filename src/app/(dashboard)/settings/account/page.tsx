@@ -3,6 +3,7 @@
 import { useEffect, useMemo, useState } from "react";
 import { CheckCircle2, Mail, Save, X } from "lucide-react";
 import { createClient } from "@/lib/supabase/client";
+import { showGlobalToast } from "@/components/ui/GlobalToast";
 
 export default function AccountSettingsPage() {
   const supabase = useMemo(() => createClient(), []);
@@ -11,7 +12,6 @@ export default function AccountSettingsPage() {
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState("");
-  const [success, setSuccess] = useState("");
   
 
   useEffect(() => {
@@ -29,7 +29,6 @@ export default function AccountSettingsPage() {
 
   const handleSave = async () => {
   setError("");
-  setSuccess("");
 
   const cleanEmail = email.trim();
 
@@ -51,44 +50,16 @@ export default function AccountSettingsPage() {
   }
 
   setSaving(false);
-  setSuccess("Account email updated successfully!");
-
-  setTimeout(() => {
-    setSuccess("");
-  }, 2600);
+  showGlobalToast({
+  title: "Account updated",
+  message: "Account email updated successfully!",
+  type: "success",
+  duration: 2600,
+  });
 };
 
   return (
     <div className="mx-auto w-full max-w-4xl space-y-6 p-6">
-        {success && (
-        <div className="toast-card-motion fixed bottom-6 right-6 z-[100] w-[320px] overflow-hidden rounded-2xl border border-gray-200 bg-white shadow-[0_18px_45px_rgba(15,23,42,0.16)]">
-            <div className="flex items-start gap-3 px-4 py-4">
-            <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-green-50">
-                <CheckCircle2 className="h-5 w-5 text-green-500" />
-            </div>
-
-            <div className="min-w-0 flex-1">
-                <p className="text-sm font-semibold text-gray-900">
-                Changes saved
-                </p>
-
-                <p className="mt-0.5 text-xs text-gray-400">
-                {success}
-                </p>
-            </div>
-
-            <button
-                type="button"
-                onClick={() => setSuccess("")}
-                className="flex h-7 w-7 items-center justify-center rounded-md text-gray-400 transition hover:bg-gray-100"
-            >
-                <X size={14} />
-            </button>
-            </div>
-
-            <div className="toast-progress h-[3px] w-full bg-green-500" />
-        </div>
-        )}
       <div>
         <h1 className="text-xl font-bold text-gray-900">
           Account Settings
